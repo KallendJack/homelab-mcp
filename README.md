@@ -6,3 +6,12 @@ set up. Read-only, through a Docker socket proxy.
 
 Work in progress: the design is in [`docs/architecture.md`](docs/architecture.md) and the vocabulary in
 [`CONTEXT.md`](CONTEXT.md).
+
+## Development
+
+Needs Node 24 and pnpm (the version is pinned in `package.json`).
+
+```sh
+pnpm install
+pnpm verify   # lint and format check, types, tests: what CI runs on every PR
+```

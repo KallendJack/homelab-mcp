@@ -5,7 +5,7 @@ How homelab-mcp is put together. The vocabulary is in [CONTEXT.md](../CONTEXT.md
 
 ## Stack
 
-TypeScript on Node 22, the official MCP TypeScript SDK (`@modelcontextprotocol/sdk`), Zod, Vitest, Biome, GitHub
+TypeScript on Node 24, the official MCP TypeScript SDK (`@modelcontextprotocol/sdk`), Zod, Vitest, Biome, GitHub
 Actions. One pnpm package, shipped as a Docker image. No web framework: Node's own `http` server is enough for one
 route.
 
