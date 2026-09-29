@@ -1,0 +1,26 @@
+{
+  "name": "homelab-mcp",
+  "version": "0.0.0",
+  "private": true,
+  "description": "MCP server that lets an AI assistant see how a self-hosted Docker homelab is doing",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@12.5.1",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "check": "biome check --error-on-warnings .",
+    "format": "biome check --write .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "verify": "pnpm check && pnpm typecheck && pnpm test"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "@types/node": "^24.19.0",
+    "typescript": "7.0.2",
+    "vitest": "5.0.2"
+  }
+}
