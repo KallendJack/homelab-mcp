@@ -12,7 +12,8 @@
     "isolatedModules": true,
     "skipLibCheck": true,
     "rewriteRelativeImportExtensions": true,
-    "erasableSyntaxOnly": true
+    "erasableSyntaxOnly": true,
+    "resolveJsonModule": true
   },
   "include": ["src"]
 }
