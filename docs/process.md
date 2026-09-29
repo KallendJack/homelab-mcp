@@ -37,8 +37,14 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   fail the command, so `check` runs with `--error-on-warnings`. Review pinned `engines` to `24.x` and has CI read the Node
   version from it, so the version lives in one place.
 - **2026-09-29**: Ticket 02 (#3), the tracer bullet. Config, the Docker Source, `list_containers` and the Server,
-  test-first at the three agreed seams: `loadConfig`, the Tool's handler on a fake `fetch` with a scrubbed fixture, and
+  test-first through three interfaces: `loadConfig`, the Tool's handler on the fake `fetch` seam, and
   the Server end to end with the MCP SDK's own client. Node 24 runs the TypeScript directly (`pnpm start`), so there
   is no build step yet. Two things the SDK taught: its transport types clash with `exactOptionalPropertyTypes`, handled
   with a commented cast at the two places it touches rather than weakening the setting; and a server with open client
   connections won't close until they're closed too. Tried by hand against a stand-in proxy serving the fixture.
+  Review caught: adding the SDK as an exact, hours-old version had made pnpm write an exemption from its
+  release-age check, quietly switching off a supply-chain safeguard (now 1.30.1, no exemption); a network error's own
+  text could reach the Client and name the Host (now a fixed sentence plus the error code); a timeout while reading
+  the body was misreported as an unexpected answer; and nothing proved the other Tools keep working after one fails.
+  The Docker fixture is hand-written in Docker's shape until ticket 09 records real ones. `now` moves to the tickets
+  that need it (06, 07).

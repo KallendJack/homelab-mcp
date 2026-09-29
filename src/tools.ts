@@ -19,8 +19,8 @@ export function buildTools(sources: Sources): Tool[] {
       name: "list_containers",
       description:
         "Lists every Docker container on the homelab host, running or not, with its state, status and image. " +
-        "Containers that are stopped, restarting or unhealthy come first. Use it to see what's running or to find " +
-        "a container's exact name before reading its logs.",
+        "Containers that are stopped, restarting or unhealthy come first. Use it to see what's running, what has " +
+        "stopped, or a container's exact name.",
       inputSchema: {},
       handler: async () => formatContainers(await sources.docker.containers()),
     },
@@ -36,14 +36,18 @@ function formatContainers(containers: Container[]): string {
   const attention = containers.filter(needsAttention).sort(byName);
   const normal = containers.filter((c) => !needsAttention(c)).sort(byName);
 
-  const lines = [`${containers.length} Containers, ${attention.length} need attention.`];
-  if (attention.length > 0) {
-    lines.push("", "Need attention:");
-    lines.push(...attention.map((c) => `- ${c.name}: ${c.state}, ${c.status} (${c.image})`));
-  }
-  if (normal.length > 0) {
-    lines.push("", "Running normally:");
-    lines.push(...normal.map((c) => `- ${c.name}: ${c.status} (${c.image})`));
-  }
-  return lines.join("\n");
+  return [
+    `${containers.length} Containers, ${attention.length} need attention.`,
+    ...section(
+      "Need attention:",
+      attention,
+      (c) => `${c.name}: ${c.state}, ${c.status} (${c.image})`,
+    ),
+    ...section("Running normally:", normal, (c) => `${c.name}: ${c.status} (${c.image})`),
+  ].join("\n");
+}
+
+/** A titled list after a blank line, or nothing when there are no items. */
+function section<T>(title: string, items: T[], line: (item: T) => string): string[] {
+  return items.length === 0 ? [] : ["", title, ...items.map((item) => `- ${line(item)}`)];
 }

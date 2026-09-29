@@ -122,6 +122,17 @@ describe("the Server", () => {
     );
   });
 
+  it("keeps serving the other Tools after one fails", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    const failing = toolThatThrows(new SourceError("Docker didn't answer."));
+    const { url } = await start([failing, ...realTools()]);
+    const client = await connect(url);
+
+    await client.callTool({ name: "broken_tool", arguments: {} });
+    const result = await client.callTool({ name: "list_containers", arguments: {} });
+    expect(result.isError).toBeFalsy();
+  });
+
   it("logs each Tool call with its name, how long it took and whether it worked", async () => {
     const logged = vi.spyOn(console, "log").mockImplementation(() => {});
     const { url } = await start(realTools());

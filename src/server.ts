@@ -17,10 +17,10 @@ export type RunningServer = {
 
 /** Serves the Tools over MCP to Clients that send the Token (ADR 0003). */
 export async function startServer(
-  options: Pick<Config, "token" | "port">,
+  config: Pick<Config, "token" | "port">,
   tools: Tool[],
 ): Promise<RunningServer> {
-  const expected = digest(`Bearer ${options.token}`);
+  const expectedDigest = digest(`Bearer ${config.token}`);
 
   const http = createServer((request, response) => {
     handle(request, response).catch((error: unknown) => {
@@ -41,7 +41,7 @@ export async function startServer(
       return;
     }
     // Compare fixed-length digests so the check takes the same time whatever was sent.
-    if (!timingSafeEqual(digest(request.headers.authorization ?? ""), expected)) {
+    if (!timingSafeEqual(digest(request.headers.authorization ?? ""), expectedDigest)) {
       response.writeHead(401).end();
       return;
     }
@@ -59,7 +59,7 @@ export async function startServer(
     await transport.handleRequest(request, response);
   }
 
-  await new Promise<void>((resolve) => http.listen(options.port, resolve));
+  await new Promise<void>((resolve) => http.listen(config.port, resolve));
   const { port } = http.address() as AddressInfo;
   return {
     url: `http://127.0.0.1:${port}`,

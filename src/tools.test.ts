@@ -35,7 +35,7 @@ describe("list_containers", () => {
     );
   });
 
-  it("gives up on Docker after 10 seconds", async () => {
+  it("tells the Client when Docker times out, and asks with a time limit", async () => {
     const { fetch, requests } = fakeFetch({
       [containersUrl]: new DOMException("The operation timed out.", "TimeoutError"),
     });
@@ -46,12 +46,39 @@ describe("list_containers", () => {
     expect(requests[0]?.init?.signal).toBeInstanceOf(AbortSignal);
   });
 
-  it("says so when Docker can't be reached", async () => {
-    const { fetch } = fakeFetch({ [containersUrl]: new TypeError("fetch failed") });
+  it("treats a timeout while reading Docker's answer as a timeout", async () => {
+    const stalledBody = new ReadableStream({
+      pull: (controller) =>
+        controller.error(new DOMException("The operation timed out.", "TimeoutError")),
+    });
+    const fetch = (async () => new Response(stalledBody)) as typeof globalThis.fetch;
+
+    await expect(listContainers(fetch).handler({})).rejects.toThrow(
+      new SourceError("Docker didn't answer within 10 seconds."),
+    );
+  });
+
+  it("says Docker can't be reached, giving only the network error code", async () => {
+    const refused = new TypeError("fetch failed", {
+      cause: Object.assign(new Error("connect ECONNREFUSED 10.1.2.3:2375"), {
+        code: "ECONNREFUSED",
+      }),
+    });
+    const { fetch } = fakeFetch({ [containersUrl]: refused });
 
     const failure = listContainers(fetch).handler({});
     await expect(failure).rejects.toBeInstanceOf(SourceError);
-    await expect(failure).rejects.toThrow("Couldn't reach Docker (fetch failed).");
+    await expect(failure).rejects.toThrow("Couldn't reach Docker (ECONNREFUSED).");
+  });
+
+  it("never passes a network error's own text to the Client, which could name the Host", async () => {
+    const { fetch } = fakeFetch({
+      [containersUrl]: new TypeError("Failed to parse URL from http://nas.example:2375"),
+    });
+
+    await expect(listContainers(fetch).handler({})).rejects.toThrow(
+      new SourceError("Couldn't reach Docker."),
+    );
   });
 
   it("passes on an error status from Docker", async () => {
