@@ -36,3 +36,9 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   `verify` fails on each kind of problem caught one gap: Biome reports an unused variable as a warning, which doesn't
   fail the command, so `check` runs with `--error-on-warnings`. Review pinned `engines` to `24.x` and has CI read the Node
   version from it, so the version lives in one place.
+- **2026-09-29**: Ticket 02 (#3), the tracer bullet. Config, the Docker Source, `list_containers` and the Server,
+  test-first at the three agreed seams: `loadConfig`, the Tool's handler on a fake `fetch` with a scrubbed fixture, and
+  the Server end to end with the MCP SDK's own client. Node 24 runs the TypeScript directly (`pnpm start`), so there
+  is no build step yet. Two things the SDK taught: its transport types clash with `exactOptionalPropertyTypes`, handled
+  with a commented cast at the two places it touches rather than weakening the setting; and a server with open client
+  connections won't close until they're closed too. Tried by hand against a stand-in proxy serving the fixture.

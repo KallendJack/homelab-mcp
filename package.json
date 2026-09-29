@@ -10,6 +10,7 @@
     "node": "24.x"
   },
   "scripts": {
+    "start": "node src/main.ts",
     "check": "biome check --error-on-warnings .",
     "format": "biome check --write .",
     "typecheck": "tsc --noEmit",
