@@ -34,4 +34,5 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
 - **2026-09-29**: Ticket 01 (#2), the scaffold. TypeScript 7, Biome, Vitest 5 and `pnpm verify`, run by GitHub
   Actions on every PR. Node 24 rather than the planned 22: it's the current long-term-support release. Proving
   `verify` fails on each kind of problem caught one gap: Biome reports an unused variable as a warning, which doesn't
-  fail the command, so `check` runs with `--error-on-warnings`.
+  fail the command, so `check` runs with `--error-on-warnings`. Review pinned `engines` to `24.x` and has CI read the Node
+  version from it, so the version lives in one place.

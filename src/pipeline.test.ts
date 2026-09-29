@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-// Placeholder until ticket 02 adds real behaviour: proves `pnpm verify` runs the test suite.
+// Placeholder proving `pnpm verify` runs the test suite. Delete it when ticket 02 adds real tests.
 describe("the test pipeline", () => {
   it("runs", () => {
     expect(1 + 1).toBe(2);
