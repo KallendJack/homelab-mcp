@@ -7,6 +7,7 @@ import { Refusal } from "./refusal.ts";
 import { type RunningServer, startServer } from "./server.ts";
 import { disk } from "./sources/disk.ts";
 import { docker } from "./sources/docker.ts";
+import { gatus } from "./sources/gatus.ts";
 import { SourceError } from "./sources/source-error.ts";
 import { fakeFetch, fixture } from "./testing/fake-fetch.ts";
 import { buildTools, type Tool } from "./tools.ts";
@@ -36,8 +37,11 @@ async function connect(url: string, bearer = token): Promise<Client> {
   return client;
 }
 
-function realTools(): Tool[] {
+const gatusUrl = "http://gatus.example:8080";
+
+function realTools(options: { gatus?: boolean } = {}): Tool[] {
   const { fetch } = fakeFetch({
+    [`${gatusUrl}/api/v1/endpoints/statuses?page=1&pageSize=1`]: fixture("gatus/statuses.json"),
     [`${dockerUrl}/containers/json?all=true`]: fixture("docker/containers.json"),
     [`${dockerUrl}/containers/sync-worker/logs?stdout=1&stderr=1&timestamps=1&tail=5`]:
       fixture("docker/logs-plain.txt"),
@@ -45,6 +49,7 @@ function realTools(): Tool[] {
   const sources = {
     docker: docker(fetch, dockerUrl),
     disk: disk([{ label: "temp", path: tmpdir() }]),
+    ...(options.gatus ? { gatus: gatus(fetch, gatusUrl) } : {}),
   };
   return buildTools(sources, { privateContainers: [] });
 }
@@ -68,6 +73,18 @@ describe("the Server", () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name)).toEqual(["list_containers", "container_logs", "disk_usage"]);
     expect(tools[0]?.description).toMatch(/every Docker container/);
+  });
+
+  it("offers list_health_checks only when the Gatus Source is on, and it works end to end", async () => {
+    const { url } = await start(realTools({ gatus: true }));
+    const client = await connect(url);
+
+    const { tools } = await client.listTools();
+    expect(tools.map((t) => t.name)).toContain("list_health_checks");
+    const result = await client.callTool({ name: "list_health_checks", arguments: {} });
+    expect(result.content).toEqual([
+      { type: "text", text: expect.stringMatching(/^5 Health checks, 2 failing\./) },
+    ]);
   });
 
   it("returns a Tool's text when the Client calls it", async () => {

@@ -1,0 +1,73 @@
+[
+  {
+    "name": "dashboard",
+    "group": "core",
+    "key": "core_dashboard",
+    "results": [
+      {
+        "status": 200,
+        "hostname": "dashboard.example",
+        "duration": 12400000,
+        "conditionResults": [{ "condition": "[STATUS] == 200", "success": true }],
+        "success": true,
+        "timestamp": "2026-09-30T08:00:00Z"
+      }
+    ],
+    "events": []
+  },
+  {
+    "name": "media-server",
+    "group": "media",
+    "key": "media_media-server",
+    "results": [
+      {
+        "status": 0,
+        "hostname": "media.example",
+        "duration": 5012000000,
+        "errors": ["Get \"http://media.example:8096/health\": context deadline exceeded"],
+        "conditionResults": [{ "condition": "[STATUS] == 200", "success": false }],
+        "success": false,
+        "timestamp": "2026-09-30T08:00:05Z"
+      }
+    ],
+    "events": []
+  },
+  {
+    "name": "dns",
+    "group": "core",
+    "key": "core_dns",
+    "results": [
+      {
+        "hostname": "dns.example",
+        "duration": 3100000,
+        "conditionResults": [{ "condition": "[CONNECTED] == true", "success": true }],
+        "success": true,
+        "timestamp": "2026-09-30T08:00:01Z"
+      }
+    ],
+    "events": []
+  },
+  {
+    "name": "vpn-tunnel",
+    "group": "network",
+    "key": "network_vpn-tunnel",
+    "results": [
+      {
+        "hostname": "vpn.example",
+        "duration": 0,
+        "errors": ["dial tcp 10.1.2.3:51820: connect: connection refused"],
+        "conditionResults": [{ "condition": "[CONNECTED] == true", "success": false }],
+        "success": false,
+        "timestamp": "2026-09-30T08:00:02Z"
+      }
+    ],
+    "events": []
+  },
+  {
+    "name": "backup-job",
+    "group": "",
+    "key": "_backup-job",
+    "results": [],
+    "events": []
+  }
+]

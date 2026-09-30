@@ -14,3 +14,6 @@ The two log fixtures show both formats Docker uses for `/containers/{name}/logs`
 - `docker/logs-plain.txt`: a Container with a terminal, which sends plain text with Windows-style line endings.
 
 `.gitattributes` keeps both byte for byte, since the headers and line endings are what the tests check.
+
+`gatus/statuses.json` is the answer to Gatus's `/api/v1/endpoints/statuses?page=1&pageSize=1`, also hand-written
+until ticket 09: two passing checks, two failing (one timed out, one refused), and one not checked yet.
