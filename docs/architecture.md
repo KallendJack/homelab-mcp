@@ -25,6 +25,11 @@ route.
 
 `main.ts` wires them: load Config, build the Sources that are on, build the Tools, start the Server.
 
+Small shared helpers sit beside the modules: `sources/http.ts` (`httpRequests`: every HTTP Source's requests, with the
+time limit and plain-sentence failures), `sources/time-limit.ts` (`withinTimeLimit`, for work that can't be cancelled),
+`sources/source-error.ts` (`SourceError` and `safeErrorCode`), `refusal.ts`, `bytes.ts` (`humanBytes`) and
+`closest-names.ts`.
+
 ## Tools (phase 1)
 
 | Tool                 | Source   | Input                         | Answer                                                             |

@@ -10,6 +10,8 @@ export type Config = {
   privateContainers: string[];
   /** Where disk_usage looks, in the order to report them. */
   diskPaths: DiskPath[];
+  /** Gatus's base URL. Set, it turns on the Gatus Source and its Tool (ADR 0001). */
+  gatusUrl?: string;
 };
 
 /** A setting that stops the server at start. Its message names variables, never their values. */
@@ -59,6 +61,13 @@ const schema = z.object({
       error:
         "PRIVATE_CONTAINERS must be Container names separated by commas, such as chat-bridge,finance",
     }),
+  // Empty counts as unset: compose files often pass GATUS_URL: ${GATUS_URL:-}.
+  GATUS_URL: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z
+      .url({ protocol: /^https?$/, error: "GATUS_URL must be an http:// or https:// address" })
+      .optional(),
+  ),
   DISK_PATHS: z
     .string()
     .default("root=/")
@@ -88,5 +97,12 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     dockerUrl: parsed.DOCKER_URL,
     privateContainers: parsed.PRIVATE_CONTAINERS,
     diskPaths: parsed.DISK_PATHS,
+    ...(parsed.GATUS_URL ? { gatusUrl: parsed.GATUS_URL } : {}),
   };
+}
+
+/** The Sources that are on, for the start-up log: names and disk labels only, never an address. */
+export function sourcesOn(config: Config): string {
+  const labels = config.diskPaths.map((p) => p.label).join(", ");
+  return ["Docker", `Disk (${labels})`, ...(config.gatusUrl ? ["Gatus"] : [])].join(", ");
 }

@@ -71,3 +71,11 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   path now races a 10-second limit, a small `withinTimeLimit` helper tested with fake timers. Also caught: `NaN%`
   for a filesystem with no size (now 0%, tested on Linux against `/proc`), sizes like `1000 kB` from rounding after
   choosing the unit (now its own tested module), and labels that could hold any text.
+- **2026-09-30**: Ticket 05 (#6), Health checks, the first optional Source. `GATUS_URL` turns Gatus on; while it's off,
+  `list_health_checks` isn't offered at all (ADR 0001), checked end to end in both states. The HTTP request code moved
+  out of Docker into a shared `httpRequests` helper first, with no change in behaviour, so Gatus gets the same time
+  limit and plain-sentence failures. Only the latest result per Health check is asked for (`pageSize=1`), and only
+  group, name, pass or fail and response time reach the Client, never Gatus's error text, which names hosts. Review
+  caught: an empty `GATUS_URL`, which compose files often pass, stopped the server instead of meaning off; a refused
+  connection read "failing (0 ms)", like a fast reply, now "no response"; and Gatus's real shape omits an empty group
+  and can send `null` results, so the fixture now does too.

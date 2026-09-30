@@ -5,9 +5,10 @@ import { afterEach, describe, expect, it } from "vitest";
 import { Refusal } from "./refusal.ts";
 import { type DiskPath, disk } from "./sources/disk.ts";
 import { docker } from "./sources/docker.ts";
+import { gatus } from "./sources/gatus.ts";
 import { SourceError } from "./sources/source-error.ts";
 import { fakeFetch, fixture } from "./testing/fake-fetch.ts";
-import { buildTools, type Tool } from "./tools.ts";
+import { buildTools, type Sources, type Tool } from "./tools.ts";
 
 const dockerUrl = "http://proxy.example:2375";
 const containersUrl = `${dockerUrl}/containers/json?all=true`;
@@ -337,3 +338,84 @@ function bytes(value: string | undefined, unit: string | undefined): number {
   const units = ["B", "kB", "MB", "GB", "TB", "PB"];
   return Number(value) * 1000 ** units.indexOf(unit ?? "B");
 }
+
+describe("list_health_checks", () => {
+  const gatusUrl = "http://gatus.example:8080";
+  const statusesUrl = `${gatusUrl}/api/v1/endpoints/statuses?page=1&pageSize=1`;
+  const toolNames = (sources: Sources) =>
+    buildTools(sources, { privateContainers: [] }).map((t) => t.name);
+  const withoutGatus = (fetch: typeof globalThis.fetch): Sources => ({
+    docker: docker(fetch, dockerUrl),
+    disk: disk([]),
+  });
+  const withGatus = (fetch: typeof globalThis.fetch): Sources => ({
+    ...withoutGatus(fetch),
+    gatus: gatus(fetch, gatusUrl),
+  });
+  const listHealthChecks = (fetch: typeof globalThis.fetch) => {
+    const found = buildTools(withGatus(fetch), { privateContainers: [] }).find(
+      (t) => t.name === "list_health_checks",
+    );
+    if (!found) throw new Error("list_health_checks isn't offered");
+    return found;
+  };
+
+  it("is offered only when the Gatus Source is on", () => {
+    const { fetch } = fakeFetch({});
+    expect(toolNames(withoutGatus(fetch))).not.toContain("list_health_checks");
+    expect(toolNames(withGatus(fetch))).toContain("list_health_checks");
+  });
+
+  it("lists each Health check with its group, whether it's passing and its latest time, failing first", async () => {
+    const { fetch } = fakeFetch({ [statusesUrl]: fixture("gatus/statuses.json") });
+
+    expect(await listHealthChecks(fetch).handler({})).toBe(
+      [
+        "5 Health checks, 2 failing.",
+        "",
+        "Failing:",
+        "- media / media-server: failing (5012 ms)",
+        "- network / vpn-tunnel: failing (no response)",
+        "",
+        "Passing:",
+        "- core / dashboard: passing (12 ms)",
+        "- core / dns: passing (3 ms)",
+        "",
+        "Not checked yet:",
+        "- backup-job",
+      ].join("\n"),
+    );
+  });
+
+  it.each([
+    ["[]", "Gatus has no Health checks."],
+    [
+      '[{"name":"dns","results":[{"success":true,"duration":3000000}]}]',
+      ["1 Health check, 0 failing.", "", "Passing:", "- dns: passing (3 ms)"].join("\n"),
+    ],
+  ])("words a short list plainly: %s", async (body, expected) => {
+    const { fetch } = fakeFetch({ [statusesUrl]: { body } });
+    expect(await listHealthChecks(fetch).handler({})).toBe(expected);
+  });
+
+  it("says Gatus can't be reached, which is different from a Health check failing", async () => {
+    const refused = new TypeError("fetch failed", {
+      cause: Object.assign(new Error("connect ECONNREFUSED 10.1.2.3:8080"), {
+        code: "ECONNREFUSED",
+      }),
+    });
+    const { fetch } = fakeFetch({ [statusesUrl]: refused });
+
+    await expect(listHealthChecks(fetch).handler({})).rejects.toThrow(
+      new SourceError("Couldn't reach Gatus (ECONNREFUSED)."),
+    );
+  });
+
+  it("says so when Gatus's answer isn't the expected shape", async () => {
+    const { fetch } = fakeFetch({ [statusesUrl]: { body: '{"error":"not found"}' } });
+
+    await expect(listHealthChecks(fetch).handler({})).rejects.toThrow(
+      new SourceError("Gatus answered with something unexpected."),
+    );
+  });
+});

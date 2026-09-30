@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { loadConfig } from "./config.ts";
+import { loadConfig, sourcesOn } from "./config.ts";
 
 const token = "t".repeat(32);
 
@@ -12,6 +12,30 @@ describe("loadConfig", () => {
       privateContainers: [],
       diskPaths: [{ label: "root", path: "/" }],
     });
+  });
+
+  it("leaves Gatus off unless GATUS_URL is set", () => {
+    expect(loadConfig({ MCP_TOKEN: token }).gatusUrl).toBeUndefined();
+    // Compose files often pass an empty value, as in GATUS_URL: ${GATUS_URL:-}.
+    expect(loadConfig({ MCP_TOKEN: token, GATUS_URL: "" }).gatusUrl).toBeUndefined();
+    expect(loadConfig({ MCP_TOKEN: token, GATUS_URL: "http://gatus:8080" }).gatusUrl).toBe(
+      "http://gatus:8080",
+    );
+  });
+
+  it("names the Sources that are on, for the start-up log, without any address", () => {
+    expect(sourcesOn(loadConfig({ MCP_TOKEN: token }))).toBe("Docker, Disk (root)");
+    const withGatus = loadConfig({
+      MCP_TOKEN: token,
+      DISK_PATHS: "data=/host/volume1,root=/",
+      GATUS_URL: "http://gatus:8080",
+    });
+    expect(sourcesOn(withGatus)).toBe("Docker, Disk (data, root), Gatus");
+  });
+
+  it("refuses a GATUS_URL that isn't an http address, without echoing it", () => {
+    const error = catchError(() => loadConfig({ MCP_TOKEN: token, GATUS_URL: "gatus:8080" }));
+    expect(error.message).toBe("GATUS_URL must be an http:// or https:// address");
   });
 
   it("reads DISK_PATHS as label=path pairs, in order, ignoring spaces", () => {

@@ -4,6 +4,7 @@ import { closestNames } from "./closest-names.ts";
 import { Refusal } from "./refusal.ts";
 import type { Disk, DiskFailure, DiskUsage } from "./sources/disk.ts";
 import { CONTAINER_NAME, type Container, type Docker } from "./sources/docker.ts";
+import type { Gatus, HealthCheck, HealthCheckResult } from "./sources/gatus.ts";
 
 /** One capability offered to Clients. The handler's text is what the Client reads. */
 export type Tool = {
@@ -18,6 +19,8 @@ export type Tool = {
 export type Sources = {
   docker: Docker;
   disk: Disk;
+  /** Optional: off unless configured, and its Tool isn't offered while off (ADR 0001). */
+  gatus?: Gatus;
 };
 
 export type ToolOptions = {
@@ -84,7 +87,25 @@ export function buildTools(sources: Sources, options: ToolOptions): Tool[] {
       inputSchema: {},
       handler: async () => formatDiskUsage(await sources.disk.usage()),
     },
+    ...optionalTools(sources),
   ];
+}
+
+/** The Tools of optional Sources, each only when its Source is on. */
+function optionalTools({ gatus }: Sources): Tool[] {
+  const tools: Tool[] = [];
+  if (gatus) {
+    tools.push({
+      name: "list_health_checks",
+      description:
+        "Lists every Gatus health check on the homelab host, failing ones first, with whether each is passing " +
+        "and how long its latest check took. Use it to see which Health checks are failing or slow from the " +
+        "outside, rather than whether containers are running.",
+      inputSchema: {},
+      handler: async () => formatHealthChecks(await gatus.healthChecks()),
+    });
+  }
+  return tools;
 }
 
 function needsAttention(c: Container): boolean {
@@ -124,6 +145,34 @@ function formatDiskUsage(usage: DiskUsage[]): string {
   };
   const paths = usage.length === 1 ? "1 path" : `${usage.length} paths`;
   return [`Disk space for ${paths}.`, "", ...usage.map(line)].join("\n");
+}
+
+function formatHealthChecks(checks: HealthCheck[]): string {
+  if (checks.length === 0) return "Gatus has no Health checks.";
+  const byGroupThenName = (a: HealthCheck, b: HealthCheck) =>
+    a.group.localeCompare(b.group) || a.name.localeCompare(b.name);
+  const title = (c: HealthCheck) => (c.group === "" ? c.name : `${c.group} / ${c.name}`);
+
+  const checked: { check: HealthCheck; latest: HealthCheckResult }[] = [];
+  const unchecked: HealthCheck[] = [];
+  for (const check of [...checks].sort(byGroupThenName)) {
+    if (check.latest) checked.push({ check, latest: check.latest });
+    else unchecked.push(check);
+  }
+  const failing = checked.filter((c) => !c.latest.passing);
+  const passing = checked.filter((c) => c.latest.passing);
+  const result = ({ check, latest }: (typeof checked)[number]) => {
+    const time = latest.responseMs === undefined ? "no response" : `${latest.responseMs} ms`;
+    return `${title(check)}: ${latest.passing ? "passing" : "failing"} (${time})`;
+  };
+
+  const count = checks.length === 1 ? "1 Health check" : `${checks.length} Health checks`;
+  return [
+    `${count}, ${failing.length} failing.`,
+    ...section("Failing:", failing, result),
+    ...section("Passing:", passing, result),
+    ...section("Not checked yet:", unchecked, title),
+  ].join("\n");
 }
 
 function describeFailure(failure: DiskFailure): string {
