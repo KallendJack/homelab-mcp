@@ -33,6 +33,31 @@ describe("loadConfig", () => {
     expect(sourcesOn(withGatus)).toBe("Docker, Disk (data, root), Gatus");
   });
 
+  it("turns Jellyfin on with both its URL and API key, and leaves it off with neither", () => {
+    expect(loadConfig({ MCP_TOKEN: token }).jellyfin).toBeUndefined();
+    expect(
+      loadConfig({ MCP_TOKEN: token, JELLYFIN_URL: "", JELLYFIN_API_KEY: "" }).jellyfin,
+    ).toBeUndefined();
+    const config = loadConfig({
+      MCP_TOKEN: token,
+      JELLYFIN_URL: "http://media.example:8096",
+      JELLYFIN_API_KEY: "test-api-key",
+    });
+    expect(config.jellyfin).toEqual({ url: "http://media.example:8096", apiKey: "test-api-key" });
+    expect(sourcesOn(config)).toBe("Docker, Disk (root), Jellyfin");
+  });
+
+  it.each([
+    [{ JELLYFIN_URL: "http://media.example:8096" }],
+    [{ JELLYFIN_API_KEY: "secret-api-key-value" }],
+  ])("refuses only one of the two Jellyfin settings, never echoing the key (%o)", (settings) => {
+    const error = catchError(() => loadConfig({ MCP_TOKEN: token, ...settings }));
+    expect(error.message).toBe(
+      "JELLYFIN_URL and JELLYFIN_API_KEY must be set together, or neither",
+    );
+    expect(error.message).not.toContain("secret-api-key-value");
+  });
+
   it("refuses a GATUS_URL that isn't an http address, without echoing it", () => {
     const error = catchError(() => loadConfig({ MCP_TOKEN: token, GATUS_URL: "gatus:8080" }));
     expect(error.message).toBe("GATUS_URL must be an http:// or https:// address");
