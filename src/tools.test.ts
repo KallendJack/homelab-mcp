@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { docker } from "./sources/docker.ts";
 import { SourceError } from "./sources/source-error.ts";
 import { fakeFetch, fixture } from "./testing/fake-fetch.ts";
-import { buildTools, type Tool } from "./tools.ts";
+import { buildTools, Refusal, type Tool } from "./tools.ts";
 
 const dockerUrl = "http://proxy.example:2375";
 const containersUrl = `${dockerUrl}/containers/json?all=true`;
@@ -129,6 +129,102 @@ describe("container_logs", () => {
         "2026-09-30 08:00:07 Scheduled task 'Scan media library' completed after 00:00:04.21",
         "2026-09-30 08:00:09 Client connected: device=living-room-tv app=Jellyfin Android TV 0.18.2 user-agent=Mozilla/5.0 (Linux; Android 12) playback=direct-play",
         "2026-09-30 08:00:11 [ERR] Failed to probe /media/films/example.mkv: file not found",
+      ].join("\n"),
+    );
+  });
+
+  it.each([
+    [20, 20],
+    [500, 500],
+    [900, 500],
+  ])("asks Docker for %i lines as %i, since 500 is the most it returns", async (asked, sent) => {
+    const { fetch, requests } = fakeFetch({
+      [containersUrl]: fixture("docker/containers.json"),
+      [logsUrl("sync-worker", sent)]: fixture("docker/logs-plain.txt"),
+    });
+
+    await containerLogs(fetch).handler({ name: "sync-worker", lines: asked });
+    expect(requests.map((r) => r.url)).toContain(logsUrl("sync-worker", sent));
+  });
+
+  it("refuses a Private container without contacting Docker", async () => {
+    const { fetch, requests } = fakeFetch({});
+
+    await expect(
+      containerLogs(fetch, ["chat-bridge"]).handler({ name: "chat-bridge" }),
+    ).rejects.toThrow(
+      new Refusal(
+        "chat-bridge is a Private container, so its logs are never returned. Its status still shows in list_containers.",
+      ),
+    );
+    expect(requests).toEqual([]);
+  });
+
+  it.each([
+    [
+      "media",
+      'No Container is named "media". Closest: media-server. list_containers shows every name.',
+    ],
+    [
+      "sync-wroker",
+      'No Container is named "sync-wroker". Closest: sync-worker. list_containers shows every name.',
+    ],
+    [
+      "Media-Server",
+      'No Container is named "Media-Server". Closest: media-server. list_containers shows every name.',
+    ],
+    ["postgres", 'No Container is named "postgres". list_containers shows every name.'],
+  ])("refuses the unknown name %s, suggesting only names that are close", async (name, message) => {
+    const { fetch } = fakeFetch({ [containersUrl]: fixture("docker/containers.json") });
+
+    await expect(containerLogs(fetch).handler({ name })).rejects.toThrow(new Refusal(message));
+  });
+
+  it("asks for logs only by an exact Container name, never an ID, which could reach a Private container", async () => {
+    const { fetch, requests } = fakeFetch({ [containersUrl]: fixture("docker/containers.json") });
+    const idOfMediaServer = "2a4b6c8d0e1f";
+
+    await expect(containerLogs(fetch).handler({ name: idOfMediaServer })).rejects.toBeInstanceOf(
+      Refusal,
+    );
+    expect(requests.map((r) => r.url)).toEqual([containersUrl]);
+  });
+
+  it("says so when a Container has no log lines", async () => {
+    const { fetch } = fakeFetch({
+      [containersUrl]: fixture("docker/containers.json"),
+      [logsUrl("dashboard", 100)]: { body: "" },
+    });
+
+    expect(await containerLogs(fetch).handler({ name: "dashboard" })).toBe(
+      "dashboard has no log lines.",
+    );
+  });
+
+  it("passes on Docker's error when a Container goes between the list and its logs", async () => {
+    const { fetch } = fakeFetch({
+      [containersUrl]: fixture("docker/containers.json"),
+      [logsUrl("backup-job", 100)]: { status: 404, body: '{"message":"No such container"}' },
+    });
+
+    await expect(containerLogs(fetch).handler({ name: "backup-job" })).rejects.toThrow(
+      new SourceError("Docker answered with HTTP 404."),
+    );
+  });
+
+  it("returns a plain log stream, from a Container with a terminal, just as cleanly", async () => {
+    const { fetch } = fakeFetch({
+      [containersUrl]: fixture("docker/containers.json"),
+      [logsUrl("sync-worker", 100)]: fixture("docker/logs-plain.txt"),
+    });
+
+    expect(await containerLogs(fetch).handler({ name: "sync-worker" })).toBe(
+      [
+        "sync-worker: last 3 log lines, oldest first.",
+        "",
+        "2026-09-30 09:15:00 sync started",
+        "2026-09-30 09:15:03 copied 42 files",
+        "2026-09-30 09:15:04 sync finished in 4s",
       ].join("\n"),
     );
   });

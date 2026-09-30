@@ -18,6 +18,9 @@ export type ToolOptions = {
   privateContainers: string[];
 };
 
+/** A Tool won't do what the Client asked. The message says why, as a sentence the Client is shown as it is. */
+export class Refusal extends Error {}
+
 const DEFAULT_LOG_LINES = 100;
 const MAX_LOG_LINES = 500;
 
@@ -33,7 +36,7 @@ const logsInput = z.object({
     ),
 });
 
-export function buildTools(sources: Sources, _options: ToolOptions): Tool[] {
+export function buildTools(sources: Sources, options: ToolOptions): Tool[] {
   return [
     {
       name: "list_containers",
@@ -52,6 +55,16 @@ export function buildTools(sources: Sources, _options: ToolOptions): Tool[] {
       inputSchema: logsInput.shape,
       handler: async (args) => {
         const { name, lines = DEFAULT_LOG_LINES } = logsInput.parse(args);
+        // Checked before Docker is asked anything, so a Private container's logs never reach this server.
+        if (options.privateContainers.includes(name)) {
+          throw new Refusal(
+            `${name} is a Private container, so its logs are never returned. Its status still shows in list_containers.`,
+          );
+        }
+        // Docker also finds a Container by part of its ID, which would get round the Private check, so logs are
+        // only ever asked for by a name taken from the list.
+        const names = (await sources.docker.containers()).map((c) => c.name);
+        if (!names.includes(name)) throw new Refusal(unknownName(name, names));
         return formatLogs(name, await sources.docker.logs(name, Math.min(lines, MAX_LOG_LINES)));
       },
     },
@@ -79,7 +92,47 @@ function formatContainers(containers: Container[]): string {
 }
 
 function formatLogs(name: string, lines: string[]): string {
+  if (lines.length === 0) return `${name} has no log lines.`;
   return [`${name}: last ${lines.length} log lines, oldest first.`, "", ...lines].join("\n");
+}
+
+function unknownName(wanted: string, names: string[]): string {
+  const closest = closestNames(wanted, names);
+  const suggestion = closest.length === 0 ? "" : ` Closest: ${closest.join(", ")}.`;
+  return `No Container is named "${wanted}".${suggestion} list_containers shows every name.`;
+}
+
+/** Up to three names that contain what was asked for, or are a few typos away from it, ignoring case. */
+function closestNames(wanted: string, names: string[]): string[] {
+  const target = wanted.toLowerCase();
+  const allowedTypos = Math.max(2, Math.floor(target.length / 3));
+  return names
+    .map((name) => {
+      const lower = name.toLowerCase();
+      return { name, distance: lower.includes(target) ? 0 : editDistance(target, lower) };
+    })
+    .filter(({ distance }) => distance <= allowedTypos)
+    .sort((a, b) => a.distance - b.distance || a.name.localeCompare(b.name))
+    .slice(0, 3)
+    .map(({ name }) => name);
+}
+
+/** How many single-letter changes (add, remove or swap one letter for another) turn `a` into `b`. */
+function editDistance(a: string, b: string): number {
+  let previous = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const current = [i];
+    for (let j = 1; j <= b.length; j++) {
+      const change = a[i - 1] === b[j - 1] ? 0 : 1;
+      current[j] = Math.min(
+        (previous[j] ?? 0) + 1,
+        (current[j - 1] ?? 0) + 1,
+        (previous[j - 1] ?? 0) + change,
+      );
+    }
+    previous = current;
+  }
+  return previous[b.length] ?? 0;
 }
 
 /** A titled list after a blank line, or nothing when there are no items. */
