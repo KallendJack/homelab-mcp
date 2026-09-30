@@ -1,4 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
@@ -8,6 +10,7 @@ import { type RunningServer, startServer } from "./server.ts";
 import { disk } from "./sources/disk.ts";
 import { docker } from "./sources/docker.ts";
 import { gatus } from "./sources/gatus.ts";
+import { report } from "./sources/report.ts";
 import { SourceError } from "./sources/source-error.ts";
 import { fakeFetch, fixture } from "./testing/fake-fetch.ts";
 import { buildTools, type Tool } from "./tools.ts";
@@ -39,7 +42,7 @@ async function connect(url: string, bearer = token): Promise<Client> {
 
 const gatusUrl = "http://gatus.example:8080";
 
-function realTools(options: { gatus?: boolean } = {}): Tool[] {
+function realTools(options: { gatus?: boolean; reportPath?: string } = {}): Tool[] {
   const { fetch } = fakeFetch({
     [`${gatusUrl}/api/v1/endpoints/statuses?page=1&pageSize=1`]: fixture("gatus/statuses.json"),
     [`${dockerUrl}/containers/json?all=true`]: fixture("docker/containers.json"),
@@ -50,6 +53,7 @@ function realTools(options: { gatus?: boolean } = {}): Tool[] {
     docker: docker(fetch, dockerUrl),
     disk: disk([{ label: "temp", path: tmpdir() }]),
     ...(options.gatus ? { gatus: gatus(fetch, gatusUrl) } : {}),
+    ...(options.reportPath ? { report: report(options.reportPath, 26, () => new Date()) } : {}),
   };
   return buildTools(sources, { privateContainers: [] });
 }
@@ -223,5 +227,23 @@ describe("the Server", () => {
     expect(logged).toHaveBeenCalledWith(
       expect.stringMatching(/^container_logs sync-worker ok in \d+ ms$/),
     );
+  });
+
+  it("runs the Report through Redaction like every other answer", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    const folder = mkdtempSync(join(tmpdir(), "report-"));
+    try {
+      const path = join(folder, "morning.txt");
+      writeFileSync(path, "Backup ran with DB_PASSWORD=hunter2\n");
+      const { url } = await start(realTools({ reportPath: path }));
+      const client = await connect(url);
+
+      const result = await client.callTool({ name: "read_report", arguments: {} });
+      expect(result.content).toEqual([
+        { type: "text", text: expect.stringContaining("Backup ran with DB_PASSWORD=[redacted]") },
+      ]);
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
   });
 });

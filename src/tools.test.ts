@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -7,6 +7,7 @@ import { type DiskPath, disk } from "./sources/disk.ts";
 import { docker } from "./sources/docker.ts";
 import { gatus } from "./sources/gatus.ts";
 import { jellyfin } from "./sources/jellyfin.ts";
+import { report } from "./sources/report.ts";
 import { SourceError } from "./sources/source-error.ts";
 import { fakeFetch, fixture } from "./testing/fake-fetch.ts";
 import { buildTools, type Sources, type Tool } from "./tools.ts";
@@ -581,6 +582,73 @@ describe("recent_media", () => {
 
     await expect(recentMedia(fetch).handler({})).rejects.toThrow(
       new SourceError("Couldn't reach Jellyfin (ECONNREFUSED)."),
+    );
+  });
+});
+
+describe("read_report", () => {
+  const noon = new Date("2026-09-30T12:00:00Z");
+  const folders: string[] = [];
+  afterEach(() => {
+    for (const folder of folders.splice(0)) rmSync(folder, { recursive: true, force: true });
+  });
+  /** A real Report file with the given text, last written at `writtenAt`. */
+  const reportFile = (text: string, writtenAt: Date) => {
+    const folder = mkdtempSync(join(tmpdir(), "report-"));
+    folders.push(folder);
+    const path = join(folder, "morning.txt");
+    writeFileSync(path, text);
+    utimesSync(path, writtenAt, writtenAt);
+    return path;
+  };
+  const sources = (path: string | undefined): Sources => ({
+    docker: docker(fakeFetch({}).fetch, dockerUrl),
+    disk: disk([]),
+    ...(path ? { report: report(path, 26, () => noon) } : {}),
+  });
+  const readReport = (path: string) => {
+    const found = buildTools(sources(path), { privateContainers: [] }).find(
+      (t) => t.name === "read_report",
+    );
+    if (!found) throw new Error("read_report isn't offered");
+    return found;
+  };
+  const text = "All 17 checks passing.\nDisk 71% used.\n";
+
+  it("is offered only when the Report Source is on", () => {
+    const names = (path: string | undefined) =>
+      buildTools(sources(path), { privateContainers: [] }).map((t) => t.name);
+    expect(names(undefined)).not.toContain("read_report");
+    expect(names("/reports/morning.txt")).toContain("read_report");
+  });
+
+  it("returns the Report exactly as written, with when it was written", async () => {
+    const path = reportFile(text, new Date("2026-09-30T06:00:00Z"));
+
+    expect(await readReport(path).handler({})).toBe(
+      `Report written 2026-09-30 06:00 UTC, 6 hours ago.\n\n${text}`,
+    );
+  });
+
+  it("starts a Stale report with a warning saying how old it is", async () => {
+    const path = reportFile(text, new Date("2026-09-28T06:00:00Z"));
+
+    expect(await readReport(path).handler({})).toBe(
+      [
+        "Warning: this Report is 2 days old, more than the 26 hours it should be, so it may no longer describe the Host.",
+        "Report written 2026-09-28 06:00 UTC, 2 days ago.",
+        "",
+        text,
+      ].join("\n"),
+    );
+  });
+
+  it("says when the Report file is missing, without naming its path", async () => {
+    const folder = mkdtempSync(join(tmpdir(), "report-"));
+    folders.push(folder);
+
+    await expect(readReport(join(folder, "morning.txt")).handler({})).rejects.toThrow(
+      new SourceError("There's no Report file yet."),
     );
   });
 });
