@@ -48,3 +48,7 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   the body was misreported as an unexpected answer; and nothing proved the other Tools keep working after one fails.
   The Docker fixture is hand-written in Docker's shape until ticket 09 records real ones. `now` moves to the tickets
   that need it (06, 07).
+- **2026-09-30**: PR descriptions changed to plain English first. The walkthroughs had become too dense to learn
+  from (PR #12 opened with Streamable HTTP, SHA-256 digests and `timingSafeEqual`), so `AGENTS.md` now sets the
+  order: what it does, how it works, at most four new terms, how it was checked, then the precise technical version
+  folded away. PR #12's description was rewritten to match.

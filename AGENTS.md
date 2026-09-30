@@ -43,8 +43,15 @@ Tickets are GitHub Issues (`docs/agents/issue-tracker.md`).
 
 - **One PR per ticket,** branched from `main`, never from another PR's branch.
 - **Test-first,** in small commits.
-- **Each PR description** ends with a walkthrough of the change in reading order and one explain-it-back question for
-  Jack.
+- **Each PR description is written for Jack to learn from,** plain English first, in this order:
+  1. **What this does:** two to four sentences with no jargon. What can the server do now that it couldn't before?
+  2. **How it works:** one short paragraph per file, in reading order, in plain words.
+  3. **New terms in this PR:** at most four, one line each: what it means and why it's needed here. Any other
+     technical word either gets explained where it's used or moves to the technical section.
+  4. **How it was checked:** tests, trying it by hand, and what review caught, each in plain words.
+  5. **Technical detail:** inside a collapsed `<details>` block, the precise version for reference.
+  6. **Explain it back:** one question about the main idea, answerable from the plain sections above. A harder
+     question can go in the technical section as a stretch.
 - **Commit and PR attribution:** commits end with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`; PR
   descriptions end with `🤖 Generated with [Claude Code](https://claude.com/claude-code)`.
 - **After each ticket,** add a dated entry to `docs/process.md`: what was built and anything review caught.
