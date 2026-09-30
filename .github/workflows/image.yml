@@ -57,6 +57,8 @@ jobs:
         with:
           images: ghcr.io/kallendjack/homelab-mcp
           tags: type=semver,pattern={{version}}
+          # Only the exact version, so nobody gets a new release without choosing it.
+          flavor: latest=false
       - uses: docker/build-push-action@v7
         with:
           context: .

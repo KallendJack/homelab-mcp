@@ -45,11 +45,6 @@ function diskPath(pair: string): DiskPath | undefined {
   return { label, path };
 }
 
-/** An optional setting, where empty counts as unset: compose files often pass NAME: ${NAME:-}. */
-function optional<T extends z.ZodType>(setting: T) {
-  return z.preprocess((value) => (value === "" ? undefined : value), setting.optional());
-}
-
 const schema = z
   .object({
     MCP_TOKEN: z
@@ -73,24 +68,22 @@ const schema = z
         error:
           "PRIVATE_CONTAINERS must be Container names separated by commas, such as chat-bridge,finance",
       }),
-    GATUS_URL: optional(
-      z.url({ protocol: /^https?$/, error: "GATUS_URL must be an http:// or https:// address" }),
-    ),
-    JELLYFIN_URL: optional(
-      z.url({ protocol: /^https?$/, error: "JELLYFIN_URL must be an http:// or https:// address" }),
-    ),
-    JELLYFIN_API_KEY: optional(z.string()),
-    REPORT_PATH: optional(
-      z
-        .string()
-        .refine((path) => path.startsWith("/"), { error: "REPORT_PATH must be an absolute path" }),
-    ),
-    REPORT_MAX_AGE_HOURS: optional(
-      z.coerce
-        .number({ error: reportAgeError })
-        .int({ error: reportAgeError })
-        .positive({ error: reportAgeError }),
-    ),
+    GATUS_URL: z
+      .url({ protocol: /^https?$/, error: "GATUS_URL must be an http:// or https:// address" })
+      .optional(),
+    JELLYFIN_URL: z
+      .url({ protocol: /^https?$/, error: "JELLYFIN_URL must be an http:// or https:// address" })
+      .optional(),
+    JELLYFIN_API_KEY: z.string().optional(),
+    REPORT_PATH: z
+      .string()
+      .refine((path) => path.startsWith("/"), { error: "REPORT_PATH must be an absolute path" })
+      .optional(),
+    REPORT_MAX_AGE_HOURS: z.coerce
+      .number({ error: reportAgeError })
+      .int({ error: reportAgeError })
+      .positive({ error: reportAgeError })
+      .optional(),
     DISK_PATHS: z
       .string()
       .default("root=/")
@@ -114,7 +107,9 @@ const schema = z
   });
 
 export function loadConfig(env: Record<string, string | undefined>): Config {
-  const result = schema.safeParse(env);
+  // Empty counts as unset, so defaults apply: Compose files often pass NAME: ${NAME:-}.
+  const set = Object.fromEntries(Object.entries(env).filter(([, value]) => value !== ""));
+  const result = schema.safeParse(set);
   if (!result.success) {
     // One message per problem: a value can fail several checks with the same message.
     const messages = new Set(result.error.issues.map((issue) => issue.message));

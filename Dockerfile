@@ -3,7 +3,7 @@ FROM node:24-alpine3.24 AS deps
 WORKDIR /app
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 COPY package.json pnpm-lock.yaml ./
-RUN corepack enable pnpm && pnpm install --frozen-lockfile --prod
+RUN corepack enable pnpm && pnpm install --frozen-lockfile --prod --ignore-scripts
 
 # Stage 2: the server. Node 24 runs the TypeScript directly, so there is no build step.
 FROM node:24-alpine3.24

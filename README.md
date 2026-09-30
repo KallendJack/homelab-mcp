@@ -9,10 +9,10 @@ it was built in [`docs/process.md`](docs/process.md).
 
 ## Tools
 
-| Tool                 | What the AI gets                                                              | Needs                                 |
+| Tool                 | What the Client gets                                                              | Needs                                 |
 | -------------------- | ----------------------------------------------------------------------------- | ------------------------------------- |
 | `list_containers`    | Every container's state, status and image, the ones needing attention first  | Always on                             |
-| `container_logs`     | A container's latest log lines (up to 500), with secrets blanked              | Always on                             |
+| `container_logs`     | A container's latest log lines (up to 500), after Redaction                   | Always on                             |
 | `disk_usage`         | Percent used, and space used, free and total, for each configured path       | Always on                             |
 | `list_health_checks` | Each Gatus check, failing first, with its latest response time               | `GATUS_URL`                           |
 | `recent_media`       | Films and episodes added to Jellyfin in the last 1 to 30 days                 | `JELLYFIN_URL` and `JELLYFIN_API_KEY` |
@@ -24,13 +24,15 @@ it was built in [`docs/process.md`](docs/process.md).
   inspecting and logs. Mounting `/var/run/docker.sock` with `:ro` is **not** read-only: it stops the file being
   replaced, not the API calls made through it ([ADR 0002](docs/adr/0002-docker-through-a-read-only-proxy.md)).
 - **A Token on every request.** Requests without it get a bare 401 ([ADR 0003](docs/adr/0003-streamable-http-with-a-bearer-token.md)).
-  Keep the server on your home network or tailnet; it isn't built to face the internet.
-- **Redaction.** Everything the server returns, error messages included, has anything that looks like a password,
-  token or key replaced with `[redacted]` first.
-- **Private containers.** Name containers whose logs hold personal text (a chat bridge, a finance app) in
+  Store the Token like any other Secret, and keep the server on your home network or tailnet; it isn't built to face the internet.
+- **Redaction.** Everything the server returns, error messages included, has anything that looks like a Secret (a
+  password, token or key) replaced with `[redacted]` first.
+- **Private containers.** Name containers whose logs hold personal text (a chat bridge, a finance tracker) in
   `PRIVATE_CONTAINERS`, and their logs are never returned. Redaction can't recognise personal text; this can.
 
 ## Setup
+
+Every path, container name and address below is an example: swap in your own.
 
 ### 1. A read-only Docker socket proxy
 
@@ -58,7 +60,7 @@ Don't publish its port to your network: homelab-mcp reaches it by name on a shar
 ### 2. The server
 
 A Token is any random string of at least 32 characters, such as the output of `openssl rand -hex 32`. Store it like
-any other secret.
+any other Secret.
 
 ```yaml
 services:
@@ -67,6 +69,7 @@ services:
     environment:
       MCP_TOKEN: ${MCP_TOKEN:?}
       DOCKER_URL: http://socket-proxy:2375
+      # Each label=path is a folder mounted below. root=/ is the container's own disk.
       DISK_PATHS: data=/host/data,root=/
       PRIVATE_CONTAINERS: chat-bridge,finance
       # Optional Sources: leave out any you don't run.
@@ -107,10 +110,10 @@ the variable but never its value.
 | `PORT`                             | No, default `8765`                     | Where the server listens                                                                        |
 | `DOCKER_URL`                       | No, default `http://socket-proxy:2375` | The read-only socket proxy                                                                      |
 | `PRIVATE_CONTAINERS`               | No                                     | Comma-separated container names whose logs are never returned                                   |
-| `DISK_PATHS`                       | No, default `root=/`                   | Comma-separated `label=path` pairs. Labels are one word each; paths are absolute, as mounted    |
+| `DISK_PATHS`                       | No, default `root=/`                   | Comma-separated `label=path` pairs: different one-word labels, absolute paths without `=` or `,`  |
 | `GATUS_URL`                        | No, turns on Gatus                     | Gatus's base URL                                                                                |
 | `JELLYFIN_URL`, `JELLYFIN_API_KEY` | No, both or neither                    | Turn on Jellyfin. The key is only ever sent in a header                                         |
-| `REPORT_PATH`                      | No, turns on the Report                | The Report file, mounted read-only                                                              |
+| `REPORT_PATH`                      | No, turns on the Report                | The Report file's absolute path, mounted read-only                                              |
 | `REPORT_MAX_AGE_HOURS`             | No, default `26`; only with `REPORT_PATH` | Whole hours; an older Report gets a warning                                                  |
 
 An empty value counts as unset, so `NAME: ${NAME:-}` in a Compose file is fine.
@@ -125,5 +128,5 @@ pnpm verify   # lint and format check, types, tests: what CI runs on every PR
 pnpm start    # runs the server; set MCP_TOKEN first
 ```
 
-Releases: bump `version` in `package.json`, merge, then push a matching tag (`git tag v0.1.0 && git push --tags`).
+Releases: bump `version` in `package.json`, merge, then push a matching tag (`git tag v0.1.0 && git push origin v0.1.0`).
 CI smoke-tests the image and publishes it to `ghcr.io/kallendjack/homelab-mcp:<version>`.
