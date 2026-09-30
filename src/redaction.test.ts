@@ -46,7 +46,7 @@ describe("redact", () => {
 
   it.each([
     [
-      "an API key in hex",
+      "a third-party key in hex",
       "using key 8f14e45fceea167a5a36dedd4bea2543 now",
       "using key [redacted] now",
     ],
@@ -75,6 +75,36 @@ describe("redact", () => {
     "calling handle_media_library_scan_completed_event_v2",
     "Up 2 days (unhealthy) (jellyfin/jellyfin:10.11.0)",
   ])("leaves an ordinary line readable: %s", (line) => {
+    expect(redact(line)).toBe(line);
+  });
+
+  it.each([
+    [
+      "base64 containing a slash",
+      "key Zm9vYmFyYmF6cXV4/cXV1eDEyMzQ1Njc4OTAx+YWJj= done",
+      "key [redacted] done",
+    ],
+    ["lower case and digits", "id k3j5h6g7f8d9s0a1q2w3e4r5t6y7u8i9o0 set", "id [redacted] set"],
+    ["a plural secret name", "API_TOKENS=abc123 ok", "API_TOKENS=[redacted] ok"],
+    [
+      "a header-style pair",
+      "X-Api-Key: abc123 password: hunter2",
+      "X-Api-Key: [redacted] password: [redacted]",
+    ],
+    ["Basic auth", "Authorization: Basic dXNlcjpwYXNz", "Authorization: Basic [redacted]"],
+    [
+      "a lower-case bearer header",
+      "authorization: bearer Ab12cd34ef",
+      "authorization: bearer [redacted]",
+    ],
+  ])("catches %s too", (_, line, expected) => {
+    expect(redact(line)).toBe(expected);
+  });
+
+  it.each([
+    "the bearer of bad news, with a basic understanding",
+    "reading /volume1/docker/jellyfin/config/Metadata2024/library",
+  ])("still leaves this ordinary line readable: %s", (line) => {
     expect(redact(line)).toBe(line);
   });
 

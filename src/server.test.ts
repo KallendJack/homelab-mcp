@@ -2,11 +2,12 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { Refusal } from "./refusal.ts";
 import { type RunningServer, startServer } from "./server.ts";
 import { docker } from "./sources/docker.ts";
 import { SourceError } from "./sources/source-error.ts";
 import { fakeFetch, fixture } from "./testing/fake-fetch.ts";
-import { buildTools, Refusal, type Tool } from "./tools.ts";
+import { buildTools, type Tool } from "./tools.ts";
 
 const token = "test-token-0123456789-0123456789-abcdef";
 const dockerUrl = "http://proxy.example:2375";

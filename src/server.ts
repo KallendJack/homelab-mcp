@@ -7,8 +7,9 @@ import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import packageJson from "../package.json" with { type: "json" };
 import type { Config } from "./config.ts";
 import { redact } from "./redaction.ts";
+import { Refusal } from "./refusal.ts";
 import { SourceError } from "./sources/source-error.ts";
-import { Refusal, type Tool } from "./tools.ts";
+import type { Tool } from "./tools.ts";
 
 export type RunningServer = {
   /** Where the server listens, such as http://127.0.0.1:8765. */

@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { Refusal } from "./refusal.ts";
 import { docker } from "./sources/docker.ts";
 import { SourceError } from "./sources/source-error.ts";
 import { fakeFetch, fixture } from "./testing/fake-fetch.ts";
-import { buildTools, Refusal, type Tool } from "./tools.ts";
+import { buildTools, type Tool } from "./tools.ts";
 
 const dockerUrl = "http://proxy.example:2375";
 const containersUrl = `${dockerUrl}/containers/json?all=true`;
