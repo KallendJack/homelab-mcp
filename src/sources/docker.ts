@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { SourceError, safeErrorCode } from "./source-error.ts";
-import { TIME_LIMIT_SECONDS } from "./time-limit.ts";
+import { httpSource } from "./http.ts";
 
 export type Container = {
   name: string;
@@ -29,56 +28,9 @@ const containerList = z.array(
   }),
 );
 
-function isTimeout(error: unknown): boolean {
-  return error instanceof DOMException && error.name === "TimeoutError";
-}
-
 /** Reads Containers through the read-only socket proxy at `url` (ADR 0002). */
 export function docker(fetch: typeof globalThis.fetch, url: string): Docker {
-  /** Asks Docker for `path` and reads the answer's body with `readBody`, within the time limit. */
-  /** Asks Docker for `path` and returns the whole answer as bytes, within the time limit. */
-  async function get(path: string): Promise<Uint8Array> {
-    // The time limit covers reading the body too, so a timeout can surface in either await.
-    const signal = AbortSignal.timeout(TIME_LIMIT_SECONDS * 1000);
-    let response: Response;
-    try {
-      response = await fetch(`${url}${path}`, { signal });
-    } catch (error) {
-      throw networkFailure(error);
-    }
-    if (!response.ok) throw new SourceError(`Docker answered with HTTP ${response.status}.`);
-    try {
-      return new Uint8Array(await response.arrayBuffer());
-    } catch (error) {
-      if (isTimeout(error)) throw networkFailure(error);
-      throw new SourceError("Docker stopped answering part way through.");
-    }
-  }
-
-  async function getJson<T>(path: string, schema: z.ZodType<T>): Promise<T> {
-    const text = new TextDecoder().decode(await get(path));
-    let body: unknown;
-    try {
-      body = JSON.parse(text);
-    } catch {
-      body = undefined;
-    }
-    const parsed = schema.safeParse(body);
-    if (!parsed.success) throw new SourceError("Docker answered with something unexpected.");
-    return parsed.data;
-  }
-
-  /**
-   * A network error's own text can name the Host (a URL, an address), so the Client only ever
-   * sees a fixed sentence, plus the error code, such as ECONNREFUSED, when there is one.
-   */
-  function networkFailure(error: unknown): SourceError {
-    if (isTimeout(error)) {
-      return new SourceError(`Docker didn't answer within ${TIME_LIMIT_SECONDS} seconds.`);
-    }
-    const code = safeErrorCode((error as { cause?: unknown }).cause);
-    return new SourceError(`Couldn't reach Docker${code ? ` (${code})` : ""}.`);
-  }
+  const { get, getJson } = httpSource(fetch, url, "Docker");
 
   return {
     async containers() {
