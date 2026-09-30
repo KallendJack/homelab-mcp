@@ -61,9 +61,13 @@ const schema = z.object({
       error:
         "PRIVATE_CONTAINERS must be Container names separated by commas, such as chat-bridge,finance",
     }),
-  GATUS_URL: z
-    .url({ protocol: /^https?$/, error: "GATUS_URL must be an http:// or https:// address" })
-    .optional(),
+  // Empty counts as unset: compose files often pass GATUS_URL: ${GATUS_URL:-}.
+  GATUS_URL: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z
+      .url({ protocol: /^https?$/, error: "GATUS_URL must be an http:// or https:// address" })
+      .optional(),
+  ),
   DISK_PATHS: z
     .string()
     .default("root=/")

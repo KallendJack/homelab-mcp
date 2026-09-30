@@ -76,6 +76,9 @@ describe("the Server", () => {
   });
 
   it("offers list_health_checks only when the Gatus Source is on, and it works end to end", async () => {
+    const off = await connect((await startServer({ token, port: 0 }, realTools())).url);
+    expect((await off.listTools()).tools.map((t) => t.name)).not.toContain("list_health_checks");
+
     const { url } = await start(realTools({ gatus: true }));
     const client = await connect(url);
 

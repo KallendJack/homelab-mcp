@@ -375,7 +375,7 @@ describe("list_health_checks", () => {
         "",
         "Failing:",
         "- media / media-server: failing (5012 ms)",
-        "- network / vpn-tunnel: failing (0 ms)",
+        "- network / vpn-tunnel: failing (no response)",
         "",
         "Passing:",
         "- core / dashboard: passing (12 ms)",
@@ -385,6 +385,17 @@ describe("list_health_checks", () => {
         "- backup-job",
       ].join("\n"),
     );
+  });
+
+  it.each([
+    ["[]", "Gatus has no Health checks."],
+    [
+      '[{"name":"dns","results":[{"success":true,"duration":3000000}]}]',
+      ["1 Health check, 0 failing.", "", "Passing:", "- dns: passing (3 ms)"].join("\n"),
+    ],
+  ])("words a short list plainly: %s", async (body, expected) => {
+    const { fetch } = fakeFetch({ [statusesUrl]: { body } });
+    expect(await listHealthChecks(fetch).handler({})).toBe(expected);
   });
 
   it("says Gatus can't be reached, which is different from a Health check failing", async () => {

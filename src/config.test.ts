@@ -16,6 +16,8 @@ describe("loadConfig", () => {
 
   it("leaves Gatus off unless GATUS_URL is set", () => {
     expect(loadConfig({ MCP_TOKEN: token }).gatusUrl).toBeUndefined();
+    // Compose files often pass an empty value, as in GATUS_URL: ${GATUS_URL:-}.
+    expect(loadConfig({ MCP_TOKEN: token, GATUS_URL: "" }).gatusUrl).toBeUndefined();
     expect(loadConfig({ MCP_TOKEN: token, GATUS_URL: "http://gatus:8080" }).gatusUrl).toBe(
       "http://gatus:8080",
     );

@@ -55,7 +55,7 @@
       {
         "hostname": "vpn.example",
         "duration": 0,
-        "errors": ["dial tcp 10.1.2.3:51820: connect: connection refused"],
+        "errors": ["dial tcp 192.0.2.10:51820: connect: connection refused"],
         "conditionResults": [{ "condition": "[CONNECTED] == true", "success": false }],
         "success": false,
         "timestamp": "2026-09-30T08:00:02Z"
@@ -65,9 +65,8 @@
   },
   {
     "name": "backup-job",
-    "group": "",
     "key": "_backup-job",
-    "results": [],
+    "results": null,
     "events": []
   }
 ]

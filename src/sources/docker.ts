@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { httpSource } from "./http.ts";
+import { httpRequests } from "./http.ts";
 
 export type Container = {
   name: string;
@@ -30,7 +30,7 @@ const containerList = z.array(
 
 /** Reads Containers through the read-only socket proxy at `url` (ADR 0002). */
 export function docker(fetch: typeof globalThis.fetch, url: string): Docker {
-  const { get, getJson } = httpSource(fetch, url, "Docker");
+  const { get, getJson } = httpRequests(fetch, url, "Docker");
 
   return {
     async containers() {

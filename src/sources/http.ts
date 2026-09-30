@@ -2,8 +2,8 @@ import type { z } from "zod";
 import { SourceError, safeErrorCode } from "./source-error.ts";
 import { TIME_LIMIT_SECONDS } from "./time-limit.ts";
 
-/** How a Source that speaks HTTP asks its system for things. Every failure is a SourceError naming the system. */
-export type HttpSource = {
+/** The requests a Source that speaks HTTP makes to its system. Every failure is a SourceError naming the system. */
+export type HttpRequests = {
   /** The whole answer to `path` as bytes, within the time limit. */
   get(path: string): Promise<Uint8Array>;
   /** The answer to `path` as JSON, checked against `schema`. */
@@ -15,11 +15,11 @@ export type HttpSource = {
  * plain sentence: the time limit passed, it couldn't be reached, it answered with an error status or something
  * unexpected, or it stopped answering part way through.
  */
-export function httpSource(
+export function httpRequests(
   fetch: typeof globalThis.fetch,
   baseUrl: string,
   system: string,
-): HttpSource {
+): HttpRequests {
   async function get(path: string): Promise<Uint8Array> {
     // The time limit covers reading the body too, so a timeout can surface in either await.
     const signal = AbortSignal.timeout(TIME_LIMIT_SECONDS * 1000);
