@@ -96,3 +96,12 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   file); no size cap, so a wrong path could send a whole log to the Client (now 200 kB); a Report just over its
   limit could read "26 hours old, more than the 26 hours" (minutes are now kept); a Report dated ahead of the clock
   looked brand new; and a max age set without `REPORT_PATH` was silently ignored.
+- **2026-09-30**: Ticket 08 (#9), Image and release. A two-stage Dockerfile: production dependencies only, run as the
+  image's `node` user, and no build step since Node 24 runs TypeScript directly. The development PC has no Docker, so
+  CI is the test: on every PR it builds the image, runs it with a read-only filesystem, no capabilities and
+  `no-new-privileges`, waits for the healthcheck, checks the user isn't root and that `/mcp` refuses a request without
+  the Token; it passed first time. A `v*` tag that matches `package.json` publishes amd64 and arm64 images to GHCR.
+  The README became the setup guide, and LinuxServer's docs confirmed `ALLOW_LOGS` is the proxy setting for logs.
+  Review caught the README promising that any empty setting counts as unset when three of them stopped the server;
+  the code now drops empty values before parsing, which also removed a helper. Known gap: the arm64 image is built
+  but only the amd64 one is smoke-tested.
