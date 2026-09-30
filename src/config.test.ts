@@ -123,6 +123,11 @@ describe("loadConfig", () => {
     );
   });
 
+  it("treats every empty setting as unset, as Compose passes for a variable left blank", () => {
+    const empty = { PORT: "", DOCKER_URL: "", PRIVATE_CONTAINERS: "", DISK_PATHS: "" };
+    expect(loadConfig({ MCP_TOKEN: token, ...empty })).toEqual(loadConfig({ MCP_TOKEN: token }));
+  });
+
   it("reads Private containers as a comma-separated list, ignoring spaces and empty entries", () => {
     const config = loadConfig({ MCP_TOKEN: token, PRIVATE_CONTAINERS: " chat-bridge, finance ,," });
     expect(config.privateContainers).toEqual(["chat-bridge", "finance"]);
