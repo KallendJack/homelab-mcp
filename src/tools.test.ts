@@ -643,6 +643,41 @@ describe("read_report", () => {
     );
   });
 
+  it.each([
+    [
+      "exactly 26 hours old is still fresh",
+      "2026-09-29T10:00:00Z",
+      "Report written 2026-09-29 10:00 UTC, 26 hours ago.",
+    ],
+    [
+      "just over is stale, and never reads as the same age as the limit",
+      "2026-09-29T09:30:00Z",
+      "Warning: this Report is 26 hours 30 minutes old, more than the 26 hours it should be, so it may no longer describe the Host.",
+    ],
+    [
+      "under an hour gives minutes",
+      "2026-09-30T11:45:00Z",
+      "Report written 2026-09-30 11:45 UTC, 15 minutes ago.",
+    ],
+    [
+      "a Report dated ahead of the clock says so, rather than being new",
+      "2026-09-30T15:00:00Z",
+      "Report written 2026-09-30 15:00 UTC, ahead of this server's clock, so its age isn't known.",
+    ],
+  ])("words the age plainly: %s", async (_, writtenAt, firstLine) => {
+    const path = reportFile(text, new Date(writtenAt));
+
+    expect((await readReport(path).handler({})).split("\n")[0]).toBe(firstLine);
+  });
+
+  it("refuses a Report file too big to return, rather than flooding the Client", async () => {
+    const path = reportFile("x".repeat(200_001), new Date("2026-09-30T06:00:00Z"));
+
+    await expect(readReport(path).handler({})).rejects.toThrow(
+      new SourceError("The Report file is over 200 kB, too big to return."),
+    );
+  });
+
   it("says when the Report file is missing, without naming its path", async () => {
     const folder = mkdtempSync(join(tmpdir(), "report-"));
     folders.push(folder);

@@ -73,7 +73,7 @@ describe("loadConfig", () => {
     ).toBe(48);
   });
 
-  it.each(["soon", "0", "-5"])("refuses REPORT_MAX_AGE_HOURS=%s", (hours) => {
+  it.each(["soon", "0", "-5", "0.5"])("refuses REPORT_MAX_AGE_HOURS=%s", (hours) => {
     const error = catchError(() =>
       loadConfig({
         MCP_TOKEN: token,
@@ -81,7 +81,12 @@ describe("loadConfig", () => {
         REPORT_MAX_AGE_HOURS: hours,
       }),
     );
-    expect(error.message).toBe("REPORT_MAX_AGE_HOURS must be a number of hours above 0");
+    expect(error.message).toBe("REPORT_MAX_AGE_HOURS must be a whole number of hours above 0");
+  });
+
+  it("refuses REPORT_MAX_AGE_HOURS without REPORT_PATH, rather than ignoring it", () => {
+    const error = catchError(() => loadConfig({ MCP_TOKEN: token, REPORT_MAX_AGE_HOURS: "48" }));
+    expect(error.message).toBe("REPORT_MAX_AGE_HOURS only applies with REPORT_PATH set");
   });
 
   it("refuses a REPORT_PATH that isn't absolute, without echoing it", () => {

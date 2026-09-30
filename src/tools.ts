@@ -131,8 +131,8 @@ function optionalTools({ gatus, jellyfin, report }: Sources): Tool[] {
       name: "read_report",
       description:
         "Returns the homelab host's scheduled Report, such as its daily status message, exactly as written, with " +
-        "when it was written. Starts with a warning if it's older than it should be. Use it for a summary the " +
-        "host has already written, before asking the other tools.",
+        "when it was written. Starts with a warning if it's older than it should be. Use it to read what the " +
+        "Host has already reported about itself, before asking the other tools.",
       inputSchema: {},
       handler: async () => formatReport(await report.read()),
     });
