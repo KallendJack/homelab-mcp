@@ -58,6 +58,39 @@ describe("loadConfig", () => {
     expect(error.message).not.toContain("secret-api-key-value");
   });
 
+  it("turns the Report on with REPORT_PATH, allowing 26 hours before it's stale unless told otherwise", () => {
+    expect(loadConfig({ MCP_TOKEN: token }).report).toBeUndefined();
+    expect(loadConfig({ MCP_TOKEN: token, REPORT_PATH: "" }).report).toBeUndefined();
+    const config = loadConfig({ MCP_TOKEN: token, REPORT_PATH: "/reports/morning.txt" });
+    expect(config.report).toEqual({ path: "/reports/morning.txt", maxAgeHours: 26 });
+    expect(sourcesOn(config)).toBe("Docker, Disk (root), Report");
+    expect(
+      loadConfig({
+        MCP_TOKEN: token,
+        REPORT_PATH: "/reports/morning.txt",
+        REPORT_MAX_AGE_HOURS: "48",
+      }).report?.maxAgeHours,
+    ).toBe(48);
+  });
+
+  it.each(["soon", "0", "-5"])("refuses REPORT_MAX_AGE_HOURS=%s", (hours) => {
+    const error = catchError(() =>
+      loadConfig({
+        MCP_TOKEN: token,
+        REPORT_PATH: "/reports/morning.txt",
+        REPORT_MAX_AGE_HOURS: hours,
+      }),
+    );
+    expect(error.message).toBe("REPORT_MAX_AGE_HOURS must be a number of hours above 0");
+  });
+
+  it("refuses a REPORT_PATH that isn't absolute, without echoing it", () => {
+    const error = catchError(() =>
+      loadConfig({ MCP_TOKEN: token, REPORT_PATH: "reports/morning.txt" }),
+    );
+    expect(error.message).toBe("REPORT_PATH must be an absolute path");
+  });
+
   it("refuses a GATUS_URL that isn't an http address, without echoing it", () => {
     const error = catchError(() => loadConfig({ MCP_TOKEN: token, GATUS_URL: "gatus:8080" }));
     expect(error.message).toBe("GATUS_URL must be an http:// or https:// address");
