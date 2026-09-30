@@ -1,5 +1,6 @@
 import { type Config, ConfigError, loadConfig } from "./config.ts";
 import { startServer } from "./server.ts";
+import { disk } from "./sources/disk.ts";
 import { docker } from "./sources/docker.ts";
 import { buildTools } from "./tools.ts";
 
@@ -15,13 +16,14 @@ function configOrExit(): Config {
 
 const config = configOrExit();
 const tools = buildTools(
-  { docker: docker(fetch, config.dockerUrl) },
+  { docker: docker(fetch, config.dockerUrl), disk: disk(config.diskPaths) },
   { privateContainers: config.privateContainers },
 );
 const server = await startServer(config, tools);
 const privateList = config.privateContainers.join(", ") || "none";
+const diskLabels = config.diskPaths.map((p) => p.label).join(", ");
 console.log(
-  `homelab-mcp listening on port ${config.port}. Sources on: Docker. Private containers: ${privateList}.`,
+  `homelab-mcp listening on port ${config.port}. Sources on: Docker, Disk (${diskLabels}). Private containers: ${privateList}.`,
 );
 
 // Docker sends SIGTERM to stop a container: finish cleanly rather than being killed.

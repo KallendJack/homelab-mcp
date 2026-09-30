@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { closestNames } from "./closest-names.ts";
 import { Refusal } from "./refusal.ts";
+import type { Disk, DiskUsage } from "./sources/disk.ts";
 import { CONTAINER_NAME, type Container, type Docker } from "./sources/docker.ts";
 
 /** One capability offered to Clients. The handler's text is what the Client reads. */
@@ -15,6 +16,7 @@ export type Tool = {
 
 export type Sources = {
   docker: Docker;
+  disk: Disk;
 };
 
 export type ToolOptions = {
@@ -73,6 +75,14 @@ export function buildTools(sources: Sources, options: ToolOptions): Tool[] {
         return formatLogs(name, await sources.docker.logs(name, Math.min(lines, MAX_LOG_LINES)));
       },
     },
+    {
+      name: "disk_usage",
+      description:
+        "Shows how full each configured disk on the homelab host is: percent used, and space used, free and " +
+        "total. Use it when something may have run out of space, or to check how much room is left.",
+      inputSchema: {},
+      handler: async () => formatDiskUsage(await sources.disk.usage()),
+    },
   ];
 }
 
@@ -99,6 +109,30 @@ function formatContainers(containers: Container[]): string {
 function formatLogs(name: string, lines: string[]): string {
   if (lines.length === 0) return `${name} has no log lines.`;
   return [`${name}: last ${lines.length} log lines, oldest first.`, "", ...lines].join("\n");
+}
+
+function formatDiskUsage(usage: DiskUsage[]): string {
+  const line = (u: DiskUsage) => {
+    if ("error" in u) return `- ${u.label}: ${u.error}`;
+    // As df counts it: used out of what's usable, so a full disk reads 100% even with space kept back.
+    const percent = Math.round((u.used / (u.used + u.free)) * 100);
+    return `- ${u.label}: ${percent}% used (${size(u.used)} used, ${size(u.free)} free, ${size(u.total)} total)`;
+  };
+  const paths = usage.length === 1 ? "1 path" : `${usage.length} paths`;
+  return [`Disk space for ${paths}.`, "", ...usage.map(line)].join("\n");
+}
+
+/** Bytes in the units disks are sold in, counting in thousands: 4.43 TB, 812 GB, 71.2 MB. */
+function size(bytes: number): string {
+  const units = ["B", "kB", "MB", "GB", "TB", "PB"];
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1000 && unit < units.length - 1) {
+    value /= 1000;
+    unit++;
+  }
+  const decimals = unit === 0 || value >= 100 ? 0 : value >= 10 ? 1 : 2;
+  return `${value.toFixed(decimals)} ${units[unit]}`;
 }
 
 function unknownName(wanted: string, names: string[]): string {

@@ -1,5 +1,9 @@
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { Refusal } from "./refusal.ts";
+import { type DiskPath, disk } from "./sources/disk.ts";
 import { docker } from "./sources/docker.ts";
 import { SourceError } from "./sources/source-error.ts";
 import { fakeFetch, fixture } from "./testing/fake-fetch.ts";
@@ -12,10 +16,10 @@ function tool(
   name: string,
   fetch: typeof globalThis.fetch,
   privateContainers: string[] = [],
+  diskPaths: DiskPath[] = [{ label: "root", path: tmpdir() }],
 ): Tool {
-  const found = buildTools({ docker: docker(fetch, dockerUrl) }, { privateContainers }).find(
-    (t) => t.name === name,
-  );
+  const sources = { docker: docker(fetch, dockerUrl), disk: disk(diskPaths) };
+  const found = buildTools(sources, { privateContainers }).find((t) => t.name === name);
   if (!found) throw new Error(`${name} isn't offered`);
   return found;
 }
@@ -255,3 +259,62 @@ describe("container_logs", () => {
     );
   });
 });
+
+describe("disk_usage", () => {
+  const diskUsage = (diskPaths: DiskPath[]) =>
+    tool("disk_usage", fakeFetch({}).fetch, [], diskPaths);
+  const size = String.raw`(\d+(?:\.\d+)?) (B|kB|MB|GB|TB|PB)`;
+  const reportLine = (label: string) =>
+    new RegExp(
+      String.raw`^- ${label}: (\d{1,3})% used \(${size} used, ${size} free, ${size} total\)$`,
+    );
+
+  it("reports used, free and total space and percent used for each path, in order", async () => {
+    const scratch = mkdtempSync(join(tmpdir(), "disk-usage-"));
+
+    const text = await diskUsage([
+      { label: "scratch", path: scratch },
+      { label: "temp", path: tmpdir() },
+    ]).handler({});
+
+    const [heading, blank, ...lines] = text.split("\n");
+    expect(heading).toBe("Disk space for 2 paths.");
+    expect(blank).toBe("");
+    expect(lines).toEqual([
+      expect.stringMatching(reportLine("scratch")),
+      expect.stringMatching(reportLine("temp")),
+    ]);
+  });
+
+  it("gives figures that agree with each other: the percent is used out of used plus free", async () => {
+    const text = await diskUsage([{ label: "temp", path: tmpdir() }]).handler({});
+
+    expect(text.split("\n")[0]).toBe("Disk space for 1 path.");
+    const match = text.split("\n")[2]?.match(reportLine("temp"));
+    if (!match) throw new Error(`unexpected line in: ${text}`);
+    const [, percent, usedValue, usedUnit, freeValue, freeUnit, totalValue, totalUnit] = match;
+    const used = bytes(usedValue, usedUnit);
+    const free = bytes(freeValue, freeUnit);
+    expect(Math.abs(Number(percent) - (used / (used + free)) * 100)).toBeLessThanOrEqual(1.5);
+    expect(used + free).toBeLessThanOrEqual(bytes(totalValue, totalUnit) * 1.01);
+  });
+
+  it("reports a path that can't be read on its own line, and still reports the others", async () => {
+    const gone = join(mkdtempSync(join(tmpdir(), "disk-usage-")), "not-there");
+
+    const text = await diskUsage([
+      { label: "gone", path: gone },
+      { label: "temp", path: tmpdir() },
+    ]).handler({});
+
+    const lines = text.split("\n").slice(2);
+    expect(lines[0]).toBe("- gone: couldn't be read (ENOENT).");
+    expect(lines[1]).toMatch(reportLine("temp"));
+  });
+});
+
+/** "4.43", "TB" as a number of bytes, counting in thousands as the output does. */
+function bytes(value: string | undefined, unit: string | undefined): number {
+  const units = ["B", "kB", "MB", "GB", "TB", "PB"];
+  return Number(value) * 1000 ** units.indexOf(unit ?? "B");
+}

@@ -22,15 +22,19 @@ describe("loadConfig", () => {
     ]);
   });
 
-  it.each(["/host/volume1", "data=", "=/host/volume1", "data=host/volume1", "data=/a,data=/b", " , "])(
-    "refuses DISK_PATHS=%s, naming the variable but never its value",
-    (value) => {
-      const error = catchError(() => loadConfig({ MCP_TOKEN: token, DISK_PATHS: value }));
-      expect(error.message).toBe(
-        "DISK_PATHS must be label=path pairs with absolute paths and different labels, separated by commas, such as data=/host/volume1",
-      );
-    },
-  );
+  it.each([
+    "/host/volume1",
+    "data=",
+    "=/host/volume1",
+    "data=host/volume1",
+    "data=/a,data=/b",
+    " , ",
+  ])("refuses DISK_PATHS=%s, naming the variable but never its value", (value) => {
+    const error = catchError(() => loadConfig({ MCP_TOKEN: token, DISK_PATHS: value }));
+    expect(error.message).toBe(
+      "DISK_PATHS must be label=path pairs with absolute paths and different labels, separated by commas, such as data=/host/volume1",
+    );
+  });
 
   it("reads Private containers as a comma-separated list, ignoring spaces and empty entries", () => {
     const config = loadConfig({ MCP_TOKEN: token, PRIVATE_CONTAINERS: " chat-bridge, finance ,," });
