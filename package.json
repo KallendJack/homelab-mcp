@@ -1,6 +1,6 @@
 {
   "name": "homelab-mcp",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "MCP server that lets an AI assistant see how a self-hosted Docker homelab is doing",
   "license": "MIT",

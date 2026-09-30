@@ -1,0 +1,7 @@
+# Only package.json, the lockfile and src/ (without tests) go into the image.
+*
+!package.json
+!pnpm-lock.yaml
+!src/
+src/**/*.test.ts
+src/testing/
