@@ -4,6 +4,7 @@ import { disk } from "./sources/disk.ts";
 import { docker } from "./sources/docker.ts";
 import { gatus } from "./sources/gatus.ts";
 import { jellyfin } from "./sources/jellyfin.ts";
+import { report } from "./sources/report.ts";
 import { buildTools } from "./tools.ts";
 
 function configOrExit(): Config {
@@ -23,6 +24,9 @@ const sources = {
   ...(config.gatusUrl ? { gatus: gatus(fetch, config.gatusUrl) } : {}),
   ...(config.jellyfin
     ? { jellyfin: jellyfin(fetch, config.jellyfin.url, config.jellyfin.apiKey, () => new Date()) }
+    : {}),
+  ...(config.report
+    ? { report: report(config.report.path, config.report.maxAgeHours, () => new Date()) }
     : {}),
 };
 const tools = buildTools(sources, { privateContainers: config.privateContainers });

@@ -87,7 +87,7 @@ Percent used is counted as df counts it: used out of used plus what an ordinary 
 | `GATUS_URL`                     | No, turns on Gatus        | Gatus's base URL                                                         |
 | `JELLYFIN_URL`, `JELLYFIN_API_KEY` | No, both or neither    | Turn on Jellyfin                                                         |
 | `REPORT_PATH`                   | No, turns on Report       | The Report file, mounted read-only                                       |
-| `REPORT_MAX_AGE_HOURS`          | No, default `26`          | Older than this is a Stale report                                        |
+| `REPORT_MAX_AGE_HOURS`          | No, default `26`          | Whole hours; older than this is a Stale report. Only with `REPORT_PATH`  |
 
 ## Test seams
 

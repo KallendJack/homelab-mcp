@@ -1,12 +1,14 @@
 import { z } from "zod";
 import { humanBytes } from "./bytes.ts";
 import { closestNames } from "./closest-names.ts";
+import { formatReport } from "./read-report.ts";
 import { formatRecentMedia, recentMediaInput } from "./recent-media.ts";
 import { Refusal } from "./refusal.ts";
 import type { Disk, DiskFailure, DiskUsage } from "./sources/disk.ts";
 import { CONTAINER_NAME, type Container, type Docker } from "./sources/docker.ts";
 import type { Gatus, HealthCheck, HealthCheckResult } from "./sources/gatus.ts";
 import type { Jellyfin } from "./sources/jellyfin.ts";
+import type { ReportSource } from "./sources/report.ts";
 import { count, section } from "./wording.ts";
 
 /** One capability offered to Clients. The handler's text is what the Client reads. */
@@ -25,6 +27,7 @@ export type Sources = {
   /** Optional: off unless configured, and its Tool isn't offered while off (ADR 0001). */
   gatus?: Gatus;
   jellyfin?: Jellyfin;
+  report?: ReportSource;
 };
 
 export type ToolOptions = {
@@ -96,7 +99,7 @@ export function buildTools(sources: Sources, options: ToolOptions): Tool[] {
 }
 
 /** The Tools of optional Sources, each only when its Source is on. */
-function optionalTools({ gatus, jellyfin }: Sources): Tool[] {
+function optionalTools({ gatus, jellyfin, report }: Sources): Tool[] {
   const tools: Tool[] = [];
   if (gatus) {
     tools.push({
@@ -121,6 +124,17 @@ function optionalTools({ gatus, jellyfin }: Sources): Tool[] {
         const { days = 1 } = recentMediaInput.parse(args);
         return formatRecentMedia(await jellyfin.recentMedia(days), days);
       },
+    });
+  }
+  if (report) {
+    tools.push({
+      name: "read_report",
+      description:
+        "Returns the homelab host's scheduled Report, such as its daily status message, exactly as written, with " +
+        "when it was written. Starts with a warning if it's older than it should be. Use it to read what the " +
+        "Host has already reported about itself, before asking the other tools.",
+      inputSchema: {},
+      handler: async () => formatReport(await report.read()),
     });
   }
   return tools;

@@ -14,12 +14,16 @@ export type Config = {
   gatusUrl?: string;
   /** Jellyfin's base URL and API key. Both set, they turn on the Jellyfin Source and its Tool. */
   jellyfin?: { url: string; apiKey: string };
+  /** The Report file and how old it may be before it's a Stale report. Set, it turns on the Report Source. */
+  report?: { path: string; maxAgeHours: number };
 };
 
 /** A setting that stops the server at start. Its message names variables, never their values. */
 export class ConfigError extends Error {}
 
 const portError = "PORT must be a whole number from 1 to 65535";
+const reportAgeError = "REPORT_MAX_AGE_HOURS must be a whole number of hours above 0";
+const DEFAULT_REPORT_MAX_AGE_HOURS = 26;
 const diskPathsError =
   "DISK_PATHS must be label=path pairs separated by commas, such as data=/host/volume1. Each label is a different word of letters, digits, - _ or ., and each path is absolute, without = or ,";
 
@@ -76,6 +80,17 @@ const schema = z
       z.url({ protocol: /^https?$/, error: "JELLYFIN_URL must be an http:// or https:// address" }),
     ),
     JELLYFIN_API_KEY: optional(z.string()),
+    REPORT_PATH: optional(
+      z
+        .string()
+        .refine((path) => path.startsWith("/"), { error: "REPORT_PATH must be an absolute path" }),
+    ),
+    REPORT_MAX_AGE_HOURS: optional(
+      z.coerce
+        .number({ error: reportAgeError })
+        .int({ error: reportAgeError })
+        .positive({ error: reportAgeError }),
+    ),
     DISK_PATHS: z
       .string()
       .default("root=/")
@@ -92,6 +107,10 @@ const schema = z
   })
   .refine((env) => (env.JELLYFIN_URL === undefined) === (env.JELLYFIN_API_KEY === undefined), {
     error: "JELLYFIN_URL and JELLYFIN_API_KEY must be set together, or neither",
+  })
+  // A half-set pair stops the server, as a max age with nothing to apply it to would otherwise be ignored.
+  .refine((env) => env.REPORT_MAX_AGE_HOURS === undefined || env.REPORT_PATH !== undefined, {
+    error: "REPORT_MAX_AGE_HOURS only applies with REPORT_PATH set",
   });
 
 export function loadConfig(env: Record<string, string | undefined>): Config {
@@ -112,6 +131,14 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     ...(parsed.JELLYFIN_URL && parsed.JELLYFIN_API_KEY
       ? { jellyfin: { url: parsed.JELLYFIN_URL, apiKey: parsed.JELLYFIN_API_KEY } }
       : {}),
+    ...(parsed.REPORT_PATH
+      ? {
+          report: {
+            path: parsed.REPORT_PATH,
+            maxAgeHours: parsed.REPORT_MAX_AGE_HOURS ?? DEFAULT_REPORT_MAX_AGE_HOURS,
+          },
+        }
+      : {}),
   };
 }
 
@@ -123,5 +150,6 @@ export function sourcesOn(config: Config): string {
     `Disk (${labels})`,
     ...(config.gatusUrl ? ["Gatus"] : []),
     ...(config.jellyfin ? ["Jellyfin"] : []),
+    ...(config.report ? ["Report"] : []),
   ].join(", ");
 }
