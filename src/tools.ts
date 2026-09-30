@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { humanBytes } from "./bytes.ts";
 import { closestNames } from "./closest-names.ts";
 import { Refusal } from "./refusal.ts";
-import type { Disk, DiskUsage } from "./sources/disk.ts";
+import type { Disk, DiskFailure, DiskUsage } from "./sources/disk.ts";
 import { CONTAINER_NAME, type Container, type Docker } from "./sources/docker.ts";
 
 /** One capability offered to Clients. The handler's text is what the Client reads. */
@@ -113,26 +114,21 @@ function formatLogs(name: string, lines: string[]): string {
 
 function formatDiskUsage(usage: DiskUsage[]): string {
   const line = (u: DiskUsage) => {
-    if ("error" in u) return `- ${u.label}: ${u.error}`;
-    // As df counts it: used out of what's usable, so a full disk reads 100% even with space kept back.
-    const percent = Math.round((u.used / (u.used + u.free)) * 100);
-    return `- ${u.label}: ${percent}% used (${size(u.used)} used, ${size(u.free)} free, ${size(u.total)} total)`;
+    if ("failure" in u) return `- ${u.label}: ${describeFailure(u.failure)}`;
+    // As df counts it: used out of what's usable, so a full disk reads 100% even with space kept back. A
+    // filesystem with no size at all, such as /proc, reads 0%.
+    const usable = u.used + u.free;
+    const percent = usable === 0 ? 0 : Math.round((u.used / usable) * 100);
+    const sizes = `${humanBytes(u.used)} used, ${humanBytes(u.free)} free, ${humanBytes(u.total)} total`;
+    return `- ${u.label}: ${percent}% used (${sizes})`;
   };
   const paths = usage.length === 1 ? "1 path" : `${usage.length} paths`;
   return [`Disk space for ${paths}.`, "", ...usage.map(line)].join("\n");
 }
 
-/** Bytes in the units disks are sold in, counting in thousands: 4.43 TB, 812 GB, 71.2 MB. */
-function size(bytes: number): string {
-  const units = ["B", "kB", "MB", "GB", "TB", "PB"];
-  let value = bytes;
-  let unit = 0;
-  while (value >= 1000 && unit < units.length - 1) {
-    value /= 1000;
-    unit++;
-  }
-  const decimals = unit === 0 || value >= 100 ? 0 : value >= 10 ? 1 : 2;
-  return `${value.toFixed(decimals)} ${units[unit]}`;
+function describeFailure(failure: DiskFailure): string {
+  if (failure.kind === "timed out") return `didn't answer within ${failure.seconds} seconds.`;
+  return `couldn't be read${failure.code ? ` (${failure.code})` : ""}.`;
 }
 
 function unknownName(wanted: string, names: string[]): string {

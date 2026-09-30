@@ -1,7 +1,7 @@
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { Refusal } from "./refusal.ts";
 import { type DiskPath, disk } from "./sources/disk.ts";
 import { docker } from "./sources/docker.ts";
@@ -261,6 +261,16 @@ describe("container_logs", () => {
 });
 
 describe("disk_usage", () => {
+  const scratchFolders: string[] = [];
+  const scratchFolder = () => {
+    const folder = mkdtempSync(join(tmpdir(), "disk-usage-"));
+    scratchFolders.push(folder);
+    return folder;
+  };
+  afterEach(() => {
+    for (const folder of scratchFolders.splice(0)) rmSync(folder, { recursive: true, force: true });
+  });
+
   const diskUsage = (diskPaths: DiskPath[]) =>
     tool("disk_usage", fakeFetch({}).fetch, [], diskPaths);
   const size = String.raw`(\d+(?:\.\d+)?) (B|kB|MB|GB|TB|PB)`;
@@ -270,7 +280,7 @@ describe("disk_usage", () => {
     );
 
   it("reports used, free and total space and percent used for each path, in order", async () => {
-    const scratch = mkdtempSync(join(tmpdir(), "disk-usage-"));
+    const scratch = scratchFolder();
 
     const text = await diskUsage([
       { label: "scratch", path: scratch },
@@ -299,8 +309,17 @@ describe("disk_usage", () => {
     expect(used + free).toBeLessThanOrEqual(bytes(totalValue, totalUnit) * 1.01);
   });
 
+  // Only Linux has a filesystem with no size (/proc), so this runs in CI, not on Windows.
+  it.runIf(process.platform === "linux")(
+    "reads 0% for a filesystem with no size at all, rather than dividing by zero",
+    async () => {
+      const text = await diskUsage([{ label: "proc", path: "/proc" }]).handler({});
+      expect(text.split("\n")[2]).toBe("- proc: 0% used (0 B used, 0 B free, 0 B total)");
+    },
+  );
+
   it("reports a path that can't be read on its own line, and still reports the others", async () => {
-    const gone = join(mkdtempSync(join(tmpdir(), "disk-usage-")), "not-there");
+    const gone = join(scratchFolder(), "not-there");
 
     const text = await diskUsage([
       { label: "gone", path: gone },

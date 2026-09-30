@@ -17,7 +17,10 @@ export class ConfigError extends Error {}
 
 const portError = "PORT must be a whole number from 1 to 65535";
 const diskPathsError =
-  "DISK_PATHS must be label=path pairs with absolute paths and different labels, separated by commas, such as data=/host/volume1";
+  "DISK_PATHS must be label=path pairs separated by commas, such as data=/host/volume1. Each label is a different word of letters, digits, - _ or ., and each path is absolute, without = or ,";
+
+/** A label is shown to the Client, so it's one plain word. */
+const DISK_LABEL = /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,31}$/;
 
 /** "a, b,,c" becomes ["a", "b", "c"]. */
 function commaList(value: string): string[] {
@@ -30,7 +33,7 @@ function commaList(value: string): string[] {
 /** "data=/host/volume1" becomes { label: "data", path: "/host/volume1" }, or undefined if it isn't one. */
 function diskPath(pair: string): DiskPath | undefined {
   const [label = "", path = "", ...rest] = pair.split("=").map((part) => part.trim());
-  if (rest.length > 0 || label === "" || !path.startsWith("/")) return undefined;
+  if (rest.length > 0 || !DISK_LABEL.test(label) || !path.startsWith("/")) return undefined;
   return { label, path };
 }
 
@@ -60,13 +63,14 @@ const schema = z.object({
     .string()
     .default("root=/")
     .transform((value, context) => {
-      const paths = commaList(value).map(diskPath);
-      const labels = new Set(paths.map((p) => p?.label));
-      if (paths.length === 0 || paths.includes(undefined) || labels.size !== paths.length) {
+      const pairs = commaList(value);
+      const paths = pairs.map(diskPath).filter((p): p is DiskPath => p !== undefined);
+      const labels = new Set(paths.map((p) => p.label));
+      if (paths.length === 0 || paths.length !== pairs.length || labels.size !== paths.length) {
         context.addIssue({ code: "custom", message: diskPathsError });
         return z.NEVER;
       }
-      return paths as DiskPath[];
+      return paths;
     }),
 });
 

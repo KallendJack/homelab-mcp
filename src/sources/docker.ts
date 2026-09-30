@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { SourceError } from "./source-error.ts";
+import { SourceError, safeErrorCode } from "./source-error.ts";
+import { TIME_LIMIT_SECONDS } from "./time-limit.ts";
 
 export type Container = {
   name: string;
@@ -18,8 +19,6 @@ export type Docker = {
 
 /** Docker's rule for Container names. Nothing else can be one, so anything else can be refused early. */
 export const CONTAINER_NAME = /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$/;
-
-const TIMEOUT_SECONDS = 10;
 
 const containerList = z.array(
   z.object({
@@ -40,7 +39,7 @@ export function docker(fetch: typeof globalThis.fetch, url: string): Docker {
   /** Asks Docker for `path` and returns the whole answer as bytes, within the time limit. */
   async function get(path: string): Promise<Uint8Array> {
     // The time limit covers reading the body too, so a timeout can surface in either await.
-    const signal = AbortSignal.timeout(TIMEOUT_SECONDS * 1000);
+    const signal = AbortSignal.timeout(TIME_LIMIT_SECONDS * 1000);
     let response: Response;
     try {
       response = await fetch(`${url}${path}`, { signal });
@@ -75,11 +74,10 @@ export function docker(fetch: typeof globalThis.fetch, url: string): Docker {
    */
   function networkFailure(error: unknown): SourceError {
     if (isTimeout(error)) {
-      return new SourceError(`Docker didn't answer within ${TIMEOUT_SECONDS} seconds.`);
+      return new SourceError(`Docker didn't answer within ${TIME_LIMIT_SECONDS} seconds.`);
     }
-    const code = (error as { cause?: { code?: unknown } }).cause?.code;
-    const safeCode = typeof code === "string" && /^[A-Z_]+$/.test(code) ? ` (${code})` : "";
-    return new SourceError(`Couldn't reach Docker${safeCode}.`);
+    const code = safeErrorCode((error as { cause?: unknown }).cause);
+    return new SourceError(`Couldn't reach Docker${code ? ` (${code})` : ""}.`);
   }
 
   return {

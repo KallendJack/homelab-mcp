@@ -1,25 +1,44 @@
 import { statfs } from "node:fs/promises";
+import { safeErrorCode } from "./source-error.ts";
+import { TIME_LIMIT_SECONDS, withinTimeLimit } from "./time-limit.ts";
 
 /** One path whose disk space is reported, under a label of the owner's choosing, such as data=/host/volume1. */
 export type DiskPath = { label: string; path: string };
 
+/** Why a path's space couldn't be read. Never the path itself, which is a Host detail. */
+export type DiskFailure =
+  | { kind: "timed out"; seconds: number }
+  | { kind: "unreadable"; code: string | undefined };
+
 /** Space in bytes on the disk holding one path, or why it couldn't be read. */
 export type DiskUsage =
   | { label: string; used: number; free: number; total: number }
-  | { label: string; error: string };
+  | { label: string; failure: DiskFailure };
 
 export type Disk = {
   usage(): Promise<DiskUsage[]>;
 };
 
-/** Reads the space on the disk holding each path, from the filesystem itself. */
+/** Reads the space on the disk holding each path, from the filesystem itself, each within the time limit. */
 export function disk(paths: DiskPath[]): Disk {
   return {
-    usage: () => Promise.all(paths.map(read)),
+    usage: () =>
+      Promise.all(
+        paths.map(({ label, path }) =>
+          withinTimeLimit(
+            read(label, path),
+            TIME_LIMIT_SECONDS,
+            (): DiskUsage => ({
+              label,
+              failure: { kind: "timed out", seconds: TIME_LIMIT_SECONDS },
+            }),
+          ),
+        ),
+      ),
   };
 }
 
-async function read({ label, path }: DiskPath): Promise<DiskUsage> {
+async function read(label: string, path: string): Promise<DiskUsage> {
   try {
     const stats = await statfs(path);
     return {
@@ -30,9 +49,6 @@ async function read({ label, path }: DiskPath): Promise<DiskUsage> {
       total: stats.blocks * stats.bsize,
     };
   } catch (error) {
-    // The error's own text names the path, a Host detail, so only its code goes out.
-    const code = (error as { code?: unknown }).code;
-    const safeCode = typeof code === "string" && /^[A-Z_]+$/.test(code) ? ` (${code})` : "";
-    return { label, error: `couldn't be read${safeCode}.` };
+    return { label, failure: { kind: "unreadable", code: safeErrorCode(error) } };
   }
 }

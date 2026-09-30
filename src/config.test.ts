@@ -32,7 +32,7 @@ describe("loadConfig", () => {
   ])("refuses DISK_PATHS=%s, naming the variable but never its value", (value) => {
     const error = catchError(() => loadConfig({ MCP_TOKEN: token, DISK_PATHS: value }));
     expect(error.message).toBe(
-      "DISK_PATHS must be label=path pairs with absolute paths and different labels, separated by commas, such as data=/host/volume1",
+      "DISK_PATHS must be label=path pairs separated by commas, such as data=/host/volume1. Each label is a different word of letters, digits, - _ or ., and each path is absolute, without = or ,",
     );
   });
 

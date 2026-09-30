@@ -65,6 +65,11 @@ A Source that can't be reached, times out (10 seconds) or answers with something
 MCP error result with a plain sentence, such as "Gatus didn't answer within 10 seconds". The Server stays up and the
 other Tools keep working. Config problems are the only thing that stops the server, and only at start.
 
+`disk_usage` is the one exception: it reads several paths, so a path that can't be read, or doesn't answer within 10
+seconds (a hung network mount), gets its own line saying so, and the other paths are still reported. Reading a disk
+can't be cancelled, so the time limit stops the Tool waiting; the stuck read itself finishes whenever the mount does.
+Percent used is counted as df counts it: used out of used plus what an ordinary user can still write.
+
 ## Config
 
 | Variable                        | Needed                    | Meaning                                                                  |
@@ -73,7 +78,7 @@ other Tools keep working. Config problems are the only thing that stops the serv
 | `PORT`                          | No, default `8765`        | Where the Server listens                                                 |
 | `DOCKER_URL`                    | No, default `http://socket-proxy:2375` | The read-only socket proxy                                   |
 | `PRIVATE_CONTAINERS`            | No                        | Comma-separated Container names whose logs are never returned            |
-| `DISK_PATHS`                    | No, default `root=/`      | Comma-separated `label=path` pairs, such as `data=/host/volume1`         |
+| `DISK_PATHS`                    | No, default `root=/`      | Comma-separated `label=path` pairs, such as `data=/host/volume1`. Labels are one word each (letters, digits, `-` `_` `.`) and different; paths are absolute, without `=` or `,` |
 | `GATUS_URL`                     | No, turns on Gatus        | Gatus's base URL                                                         |
 | `JELLYFIN_URL`, `JELLYFIN_API_KEY` | No, both or neither    | Turn on Jellyfin                                                         |
 | `REPORT_PATH`                   | No, turns on Report       | The Report file, mounted read-only                                       |
