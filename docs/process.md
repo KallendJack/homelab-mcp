@@ -52,3 +52,15 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   from (PR #12 opened with Streamable HTTP, SHA-256 digests and `timingSafeEqual`), so `AGENTS.md` now sets the
   order: what it does, how it works, at most four new terms, how it was checked, then the precise technical version
   folded away. PR #12's description was rewritten to match.
+- **2026-09-30**: Ticket 03 (#4), Container logs and Redaction. `container_logs` reads Docker's framed and plain log
+  streams into clean lines with timestamps shortened to the second; Private containers are refused before Docker is
+  asked; an unknown name gets up to three close suggestions. Two safety decisions came out of building it: logs are
+  only ever fetched by a name taken from the Container list, because Docker also accepts part of an ID, which would
+  get round the Private check; and `PRIVATE_CONTAINERS` refuses names Docker couldn't have, since a typo such as a
+  leading slash would silently protect nothing. Redaction runs once, in the Server's single `reply()`, on every
+  answer and error. Log fixtures are hand-built (a framed stream with a chunk over 127 bytes and a line split across
+  chunks; a plain stream with Windows line endings) and kept byte for byte by `.gitattributes`. Review caught a
+  serious one: a secret-name pattern with no start anchor took cubic time, so a 20,000-character Container name
+  sent by a Client would freeze the server for minutes. Every pattern is now anchored and capped, with speed tests,
+  and names must match Docker's naming rule. Review also caught a dropped connection mid-answer reaching the crash
+  path, and several secrets Redaction missed (base64 with a slash, header-style pairs, Basic auth).
