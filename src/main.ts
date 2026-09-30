@@ -14,7 +14,10 @@ function configOrExit(): Config {
 }
 
 const config = configOrExit();
-const tools = buildTools({ docker: docker(fetch, config.dockerUrl) });
+const tools = buildTools(
+  { docker: docker(fetch, config.dockerUrl) },
+  { privateContainers: config.privateContainers },
+);
 const server = await startServer(config, tools);
 console.log(`homelab-mcp listening on port ${config.port}. Sources on: Docker.`);
 

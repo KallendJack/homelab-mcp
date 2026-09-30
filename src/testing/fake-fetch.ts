@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 
 /** What the fake answers for one URL: a response, or an error to throw as a network failure would. */
-export type FakeAnswer = { status?: number; body: string } | Error;
+export type FakeAnswer = { status?: number; body: string | Uint8Array<ArrayBuffer> } | Error;
 
 export type FakeFetch = {
   fetch: typeof fetch;
@@ -23,7 +23,7 @@ export function fakeFetch(answers: Record<string, FakeAnswer>): FakeFetch {
   return { fetch: fake as typeof fetch, requests };
 }
 
-/** A recorded response from `fixtures/`, as the body of a fake answer. */
-export function fixture(path: string): { body: string } {
-  return { body: readFileSync(new URL(`../../fixtures/${path}`, import.meta.url), "utf8") };
+/** A recorded response from `fixtures/`, as the body of a fake answer. Read as bytes: log streams are binary. */
+export function fixture(path: string): { body: Uint8Array<ArrayBuffer> } {
+  return { body: new Uint8Array(readFileSync(new URL(`../../fixtures/${path}`, import.meta.url))) };
 }

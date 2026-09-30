@@ -7,12 +7,22 @@ import { buildTools, type Tool } from "./tools.ts";
 const dockerUrl = "http://proxy.example:2375";
 const containersUrl = `${dockerUrl}/containers/json?all=true`;
 
-function listContainers(fetch: typeof globalThis.fetch): Tool {
-  const tool = buildTools({ docker: docker(fetch, dockerUrl) }).find(
-    (t) => t.name === "list_containers",
+function tool(
+  name: string,
+  fetch: typeof globalThis.fetch,
+  privateContainers: string[] = [],
+): Tool {
+  const found = buildTools({ docker: docker(fetch, dockerUrl) }, { privateContainers }).find(
+    (t) => t.name === name,
   );
-  if (!tool) throw new Error("list_containers isn't offered");
-  return tool;
+  if (!found) throw new Error(`${name} isn't offered`);
+  return found;
+}
+
+const listContainers = (fetch: typeof globalThis.fetch) => tool("list_containers", fetch);
+
+function logsUrl(name: string, tail: number): string {
+  return `${dockerUrl}/containers/${name}/logs?stdout=1&stderr=1&timestamps=1&tail=${tail}`;
 }
 
 describe("list_containers", () => {
@@ -94,6 +104,32 @@ describe("list_containers", () => {
 
     await expect(listContainers(fetch).handler({})).rejects.toThrow(
       new SourceError("Docker answered with something unexpected."),
+    );
+  });
+});
+
+describe("container_logs", () => {
+  const containerLogs = (fetch: typeof globalThis.fetch, privateContainers: string[] = []) =>
+    tool("container_logs", fetch, privateContainers);
+
+  it("returns Docker's framed log stream as clean lines, stdout and stderr in order, with timestamps", async () => {
+    const { fetch } = fakeFetch({
+      [containersUrl]: fixture("docker/containers.json"),
+      [logsUrl("media-server", 100)]: fixture("docker/logs-framed.bin"),
+    });
+
+    expect(await containerLogs(fetch).handler({ name: "media-server" })).toBe(
+      [
+        "media-server: last 7 log lines, oldest first.",
+        "",
+        "2026-09-30 07:59:58 Starting media server 10.11.0",
+        "2026-09-30 07:59:59 Loading libraries",
+        "2026-09-30 08:00:02 Libraries loaded: 3",
+        "2026-09-30 08:00:05 [WRN] Transcode cache is 91% full",
+        "2026-09-30 08:00:07 Scheduled task 'Scan media library' completed after 00:00:04.21",
+        "2026-09-30 08:00:09 Client connected: device=living-room-tv app=Jellyfin Android TV 0.18.2 user-agent=Mozilla/5.0 (Linux; Android 12) playback=direct-play",
+        "2026-09-30 08:00:11 [ERR] Failed to probe /media/films/example.mkv: file not found",
+      ].join("\n"),
     );
   });
 });

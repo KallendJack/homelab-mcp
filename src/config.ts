@@ -4,6 +4,8 @@ export type Config = {
   token: string;
   port: number;
   dockerUrl: string;
+  /** Container names whose logs are never returned, matched exactly. */
+  privateContainers: string[];
 };
 
 /** A setting that stops the server at start. Its message names variables, never their values. */
@@ -24,6 +26,20 @@ const schema = z.object({
   DOCKER_URL: z
     .url({ protocol: /^https?$/, error: "DOCKER_URL must be an http:// or https:// address" })
     .default("http://socket-proxy:2375"),
+  PRIVATE_CONTAINERS: z
+    .string()
+    .default("")
+    .transform((list) =>
+      list
+        .split(",")
+        .map((name) => name.trim())
+        .filter((name) => name !== ""),
+    )
+    // Docker's own rule for names. A name it couldn't have would never match, leaving that Container unprotected.
+    .refine((names) => names.every((name) => /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(name)), {
+      error:
+        "PRIVATE_CONTAINERS must be Container names separated by commas, such as chat-bridge,finance",
+    }),
 });
 
 export function loadConfig(env: Record<string, string | undefined>): Config {
@@ -34,5 +50,10 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     throw new ConfigError([...messages].join("; "));
   }
   const parsed = result.data;
-  return { token: parsed.MCP_TOKEN, port: parsed.PORT, dockerUrl: parsed.DOCKER_URL };
+  return {
+    token: parsed.MCP_TOKEN,
+    port: parsed.PORT,
+    dockerUrl: parsed.DOCKER_URL,
+    privateContainers: parsed.PRIVATE_CONTAINERS,
+  };
 }

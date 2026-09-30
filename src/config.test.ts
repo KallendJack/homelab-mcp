@@ -9,8 +9,24 @@ describe("loadConfig", () => {
       token,
       port: 8765,
       dockerUrl: "http://socket-proxy:2375",
+      privateContainers: [],
     });
   });
+
+  it("reads Private containers as a comma-separated list, ignoring spaces and empty entries", () => {
+    const config = loadConfig({ MCP_TOKEN: token, PRIVATE_CONTAINERS: " chat-bridge, finance ,," });
+    expect(config.privateContainers).toEqual(["chat-bridge", "finance"]);
+  });
+
+  it.each(["/chat-bridge", "chat bridge", "finance;rm"])(
+    "refuses a Private container name Docker couldn't have (%s), so none is silently unprotected",
+    (name) => {
+      const error = catchError(() => loadConfig({ MCP_TOKEN: token, PRIVATE_CONTAINERS: name }));
+      expect(error.message).toBe(
+        "PRIVATE_CONTAINERS must be Container names separated by commas, such as chat-bridge,finance",
+      );
+    },
+  );
 
   it("refuses to start without a Token", () => {
     expect(() => loadConfig({})).toThrow(/MCP_TOKEN/);

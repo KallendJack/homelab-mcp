@@ -37,7 +37,7 @@ function realTools(): Tool[] {
   const { fetch } = fakeFetch({
     [`${dockerUrl}/containers/json?all=true`]: fixture("docker/containers.json"),
   });
-  return buildTools({ docker: docker(fetch, dockerUrl) });
+  return buildTools({ docker: docker(fetch, dockerUrl) }, { privateContainers: [] });
 }
 
 function toolThatThrows(error: Error): Tool {
@@ -57,7 +57,7 @@ describe("the Server", () => {
     const client = await connect(url);
 
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name)).toEqual(["list_containers"]);
+    expect(tools.map((t) => t.name)).toEqual(["list_containers", "container_logs"]);
     expect(tools[0]?.description).toMatch(/every Docker container/);
   });
 
