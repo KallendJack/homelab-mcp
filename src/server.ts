@@ -6,8 +6,9 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import packageJson from "../package.json" with { type: "json" };
 import type { Config } from "./config.ts";
+import { redact } from "./redaction.ts";
 import { SourceError } from "./sources/source-error.ts";
-import type { Tool } from "./tools.ts";
+import { Refusal, type Tool } from "./tools.ts";
 
 export type RunningServer = {
   /** Where the server listens, such as http://127.0.0.1:8765. */
@@ -76,6 +77,11 @@ function digest(value: string): Buffer {
   return createHash("sha256").update(value).digest();
 }
 
+/** The one way a Tool's text leaves the server: always through Redaction, answers and errors alike. */
+function reply(text: string, options: { isError?: true } = {}) {
+  return { content: [{ type: "text" as const, text: redact(text) }], ...options };
+}
+
 function mcpServer(tools: Tool[]): McpServer {
   const mcp = new McpServer({ name: "homelab-mcp", version: packageJson.version });
   for (const tool of tools) {
@@ -85,19 +91,24 @@ function mcpServer(tools: Tool[]): McpServer {
       async (args) => {
         const started = performance.now();
         const took = () => `${Math.round(performance.now() - started)} ms`;
+        const call = tool.logArguments
+          ? `${tool.name} ${redact(tool.logArguments(args))}`
+          : tool.name;
         try {
           const text = await tool.handler(args);
-          console.log(`${tool.name} ok in ${took()}`);
-          return { content: [{ type: "text", text }] };
+          console.log(`${call} ok in ${took()}`);
+          return reply(text);
         } catch (error) {
-          if (error instanceof SourceError) {
-            console.log(`${tool.name} failed in ${took()}: ${error.message}`);
-            return { content: [{ type: "text", text: error.message }], isError: true };
+          // A Source failing or a Tool refusing has a sentence written for the Client.
+          if (error instanceof SourceError || error instanceof Refusal) {
+            console.log(`${call} failed in ${took()}: ${redact(error.message)}`);
+            return reply(error.message, { isError: true });
           }
           // Anything else is a bug: its details stay in the server log.
-          console.error(`${tool.name} crashed after ${took()}`, error);
-          const text = `${tool.name} failed unexpectedly; the server log has the details.`;
-          return { content: [{ type: "text", text }], isError: true };
+          console.error(`${call} crashed after ${took()}`, error);
+          return reply(`${tool.name} failed unexpectedly; the server log has the details.`, {
+            isError: true,
+          });
         }
       },
     );

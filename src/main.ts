@@ -19,7 +19,10 @@ const tools = buildTools(
   { privateContainers: config.privateContainers },
 );
 const server = await startServer(config, tools);
-console.log(`homelab-mcp listening on port ${config.port}. Sources on: Docker.`);
+const privateList = config.privateContainers.join(", ") || "none";
+console.log(
+  `homelab-mcp listening on port ${config.port}. Sources on: Docker. Private containers: ${privateList}.`,
+);
 
 // Docker sends SIGTERM to stop a container: finish cleanly rather than being killed.
 process.on("SIGTERM", () => {

@@ -7,6 +7,8 @@ export type Tool = {
   description: string;
   inputSchema: z.ZodRawShape;
   handler(args: Record<string, unknown>): Promise<string>;
+  /** What the server log may show about a call's arguments. Left out, it shows none. */
+  logArguments?(args: Record<string, unknown>): string;
 };
 
 export type Sources = {
@@ -53,6 +55,7 @@ export function buildTools(sources: Sources, options: ToolOptions): Tool[] {
         "Returns the latest lines of one container's logs, oldest first, each with its date and time. Use it to " +
         "find out why a container is failing or what it has been doing. Needs the exact name from list_containers.",
       inputSchema: logsInput.shape,
+      logArguments: (args) => String(args.name),
       handler: async (args) => {
         const { name, lines = DEFAULT_LOG_LINES } = logsInput.parse(args);
         // Checked before Docker is asked anything, so a Private container's logs never reach this server.

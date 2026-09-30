@@ -6,7 +6,7 @@ import { type RunningServer, startServer } from "./server.ts";
 import { docker } from "./sources/docker.ts";
 import { SourceError } from "./sources/source-error.ts";
 import { fakeFetch, fixture } from "./testing/fake-fetch.ts";
-import { buildTools, type Tool } from "./tools.ts";
+import { buildTools, Refusal, type Tool } from "./tools.ts";
 
 const token = "test-token-0123456789-0123456789-abcdef";
 const dockerUrl = "http://proxy.example:2375";
@@ -36,6 +36,8 @@ async function connect(url: string, bearer = token): Promise<Client> {
 function realTools(): Tool[] {
   const { fetch } = fakeFetch({
     [`${dockerUrl}/containers/json?all=true`]: fixture("docker/containers.json"),
+    [`${dockerUrl}/containers/sync-worker/logs?stdout=1&stderr=1&timestamps=1&tail=5`]:
+      fixture("docker/logs-plain.txt"),
   });
   return buildTools({ docker: docker(fetch, dockerUrl) }, { privateContainers: [] });
 }
@@ -106,6 +108,49 @@ describe("the Server", () => {
     expect(result.content).toEqual([{ type: "text", text: "Docker didn't answer." }]);
   });
 
+  it("redacts every Tool's answer, so a Tool can't leak a Secret even if it tries", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    const careless: Tool = {
+      name: "careless_tool",
+      description: "Returns a Secret.",
+      inputSchema: {},
+      handler: async () => "connected with DB_PASSWORD=hunter2",
+    };
+    const { url } = await start([careless]);
+    const client = await connect(url);
+
+    const result = await client.callTool({ name: "careless_tool", arguments: {} });
+    expect(result.content).toEqual([
+      { type: "text", text: "connected with DB_PASSWORD=[redacted]" },
+    ]);
+  });
+
+  it("redacts error messages too", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    const leaky = new SourceError("Docker refused Authorization: Bearer abcDEF123456789xyz.");
+    const { url } = await start([toolThatThrows(leaky)]);
+    const client = await connect(url);
+
+    const result = await client.callTool({ name: "broken_tool", arguments: {} });
+    expect(result.isError).toBe(true);
+    expect(result.content).toEqual([
+      { type: "text", text: "Docker refused Authorization: Bearer [redacted]" },
+    ]);
+  });
+
+  it("shows the Client a Tool's refusal as its own sentence", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    const refusal = new Refusal(
+      "chat-bridge is a Private container, so its logs are never returned.",
+    );
+    const { url } = await start([toolThatThrows(refusal)]);
+    const client = await connect(url);
+
+    const result = await client.callTool({ name: "broken_tool", arguments: {} });
+    expect(result.isError).toBe(true);
+    expect(result.content).toEqual([{ type: "text", text: refusal.message }]);
+  });
+
   it("hides the details of an unexpected error from the Client and logs them", async () => {
     const logged = vi.spyOn(console, "error").mockImplementation(() => {});
     const { url } = await start([toolThatThrows(new Error("secret internal detail"))]);
@@ -140,5 +185,16 @@ describe("the Server", () => {
 
     await client.callTool({ name: "list_containers", arguments: {} });
     expect(logged).toHaveBeenCalledWith(expect.stringMatching(/^list_containers ok in \d+ ms$/));
+  });
+
+  it("logs the Container name for container_logs, and no other argument", async () => {
+    const logged = vi.spyOn(console, "log").mockImplementation(() => {});
+    const { url } = await start(realTools());
+    const client = await connect(url);
+
+    await client.callTool({ name: "container_logs", arguments: { name: "sync-worker", lines: 5 } });
+    expect(logged).toHaveBeenCalledWith(
+      expect.stringMatching(/^container_logs sync-worker ok in \d+ ms$/),
+    );
   });
 });
