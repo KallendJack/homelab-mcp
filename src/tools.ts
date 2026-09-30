@@ -1,6 +1,8 @@
 import { z } from "zod";
+import { humanBytes } from "./bytes.ts";
 import { closestNames } from "./closest-names.ts";
 import { Refusal } from "./refusal.ts";
+import type { Disk, DiskFailure, DiskUsage } from "./sources/disk.ts";
 import { CONTAINER_NAME, type Container, type Docker } from "./sources/docker.ts";
 
 /** One capability offered to Clients. The handler's text is what the Client reads. */
@@ -15,6 +17,7 @@ export type Tool = {
 
 export type Sources = {
   docker: Docker;
+  disk: Disk;
 };
 
 export type ToolOptions = {
@@ -73,6 +76,14 @@ export function buildTools(sources: Sources, options: ToolOptions): Tool[] {
         return formatLogs(name, await sources.docker.logs(name, Math.min(lines, MAX_LOG_LINES)));
       },
     },
+    {
+      name: "disk_usage",
+      description:
+        "Shows how full each configured disk on the homelab host is: percent used, and space used, free and " +
+        "total. Use it when something may have run out of space, or to check how much room is left.",
+      inputSchema: {},
+      handler: async () => formatDiskUsage(await sources.disk.usage()),
+    },
   ];
 }
 
@@ -99,6 +110,25 @@ function formatContainers(containers: Container[]): string {
 function formatLogs(name: string, lines: string[]): string {
   if (lines.length === 0) return `${name} has no log lines.`;
   return [`${name}: last ${lines.length} log lines, oldest first.`, "", ...lines].join("\n");
+}
+
+function formatDiskUsage(usage: DiskUsage[]): string {
+  const line = (u: DiskUsage) => {
+    if ("failure" in u) return `- ${u.label}: ${describeFailure(u.failure)}`;
+    // As df counts it: used out of what's usable, so a full disk reads 100% even with space kept back. A
+    // filesystem with no size at all, such as /proc, reads 0%.
+    const usable = u.used + u.free;
+    const percent = usable === 0 ? 0 : Math.round((u.used / usable) * 100);
+    const sizes = `${humanBytes(u.used)} used, ${humanBytes(u.free)} free, ${humanBytes(u.total)} total`;
+    return `- ${u.label}: ${percent}% used (${sizes})`;
+  };
+  const paths = usage.length === 1 ? "1 path" : `${usage.length} paths`;
+  return [`Disk space for ${paths}.`, "", ...usage.map(line)].join("\n");
+}
+
+function describeFailure(failure: DiskFailure): string {
+  if (failure.kind === "timed out") return `didn't answer within ${failure.seconds} seconds.`;
+  return `couldn't be read${failure.code ? ` (${failure.code})` : ""}.`;
 }
 
 function unknownName(wanted: string, names: string[]): string {

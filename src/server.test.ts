@@ -1,9 +1,11 @@
+import { tmpdir } from "node:os";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Refusal } from "./refusal.ts";
 import { type RunningServer, startServer } from "./server.ts";
+import { disk } from "./sources/disk.ts";
 import { docker } from "./sources/docker.ts";
 import { SourceError } from "./sources/source-error.ts";
 import { fakeFetch, fixture } from "./testing/fake-fetch.ts";
@@ -40,7 +42,11 @@ function realTools(): Tool[] {
     [`${dockerUrl}/containers/sync-worker/logs?stdout=1&stderr=1&timestamps=1&tail=5`]:
       fixture("docker/logs-plain.txt"),
   });
-  return buildTools({ docker: docker(fetch, dockerUrl) }, { privateContainers: [] });
+  const sources = {
+    docker: docker(fetch, dockerUrl),
+    disk: disk([{ label: "temp", path: tmpdir() }]),
+  };
+  return buildTools(sources, { privateContainers: [] });
 }
 
 function toolThatThrows(error: Error): Tool {
@@ -60,7 +66,7 @@ describe("the Server", () => {
     const client = await connect(url);
 
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name)).toEqual(["list_containers", "container_logs"]);
+    expect(tools.map((t) => t.name)).toEqual(["list_containers", "container_logs", "disk_usage"]);
     expect(tools[0]?.description).toMatch(/every Docker container/);
   });
 

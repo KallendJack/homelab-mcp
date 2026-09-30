@@ -64,3 +64,10 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   sent by a Client would freeze the server for minutes. Every pattern is now anchored and capped, with speed tests,
   and names must match Docker's naming rule. Review also caught a dropped connection mid-answer reaching the crash
   path, and several secrets Redaction missed (base64 with a slash, header-style pairs, Basic auth).
+- **2026-09-30**: Ticket 04 (#5), Disk usage. `disk_usage` reads each `DISK_PATHS` entry with `statfs`, tested
+  against real temporary folders, and counts percent used as df does. A path that fails gets its own line with only
+  its error code, since the path is a Host detail; the other paths are still reported. Review caught a hang: a stale
+  network mount would stop the Tool, and every other path, for good. Reading a disk can't be cancelled, so each
+  path now races a 10-second limit, a small `withinTimeLimit` helper tested with fake timers. Also caught: `NaN%`
+  for a filesystem with no size (now 0%, tested on Linux against `/proc`), sizes like `1000 kB` from rounding after
+  choosing the unit (now its own tested module), and labels that could hold any text.
