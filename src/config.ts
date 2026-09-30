@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CONTAINER_NAME } from "./sources/docker.ts";
 
 export type Config = {
   token: string;
@@ -36,7 +37,7 @@ const schema = z.object({
         .filter((name) => name !== ""),
     )
     // Docker's own rule for names. A name it couldn't have would never match, leaving that Container unprotected.
-    .refine((names) => names.every((name) => /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(name)), {
+    .refine((names) => names.every((name) => CONTAINER_NAME.test(name)), {
       error:
         "PRIVATE_CONTAINERS must be Container names separated by commas, such as chat-bridge,finance",
     }),

@@ -77,4 +77,18 @@ describe("redact", () => {
   ])("leaves an ordinary line readable: %s", (line) => {
     expect(redact(line)).toBe(line);
   });
+
+  // A slow pattern would freeze the whole server, and a Client can send long text on purpose.
+  it.each([
+    ["a name made of secret words", "tokenx".repeat(4000)],
+    ["repeated secret", "secret".repeat(4000)],
+    ["a quoted secret name with no value", `"${"password".repeat(3000)}`],
+    ["repeated JWT starts", "eyJ".repeat(8000)],
+    ["a URL scheme with no end", `a://${"b".repeat(24000)}`],
+    ["one long random-looking run", "aB3".repeat(8000)],
+  ])("redacts 24,000 characters of %s in well under a second", (_, text) => {
+    const started = performance.now();
+    redact(text);
+    expect(performance.now() - started).toBeLessThan(250);
+  });
 });

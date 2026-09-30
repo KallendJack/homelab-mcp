@@ -16,6 +16,9 @@ export type Docker = {
   logs(name: string, lines: number): Promise<string[]>;
 };
 
+/** Docker's rule for Container names. Nothing else can be one, so anything else can be refused early. */
+export const CONTAINER_NAME = /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$/;
+
 const TIMEOUT_SECONDS = 10;
 
 const containerList = z.array(

@@ -190,6 +190,16 @@ describe("container_logs", () => {
     expect(requests.map((r) => r.url)).toEqual([containersUrl]);
   });
 
+  it.each([
+    ["a line break, which could fake a line in the server log", "media-server\nFAKE ok"],
+    ["thousands of characters", "a".repeat(5000)],
+  ])("rejects a name no Container could have (%s) without contacting Docker", async (_, name) => {
+    const { fetch, requests } = fakeFetch({});
+
+    await expect(containerLogs(fetch).handler({ name })).rejects.toThrow();
+    expect(requests).toEqual([]);
+  });
+
   it("says so when a Container has no log lines", async () => {
     const { fetch } = fakeFetch({
       [containersUrl]: fixture("docker/containers.json"),

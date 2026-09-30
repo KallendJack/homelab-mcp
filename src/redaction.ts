@@ -1,18 +1,21 @@
 const PLACEHOLDER = "[redacted]";
 
+// Every pattern starts only where a word starts and caps how far each part may reach, so redacting a line takes
+// time in proportion to its length. Unbounded patterns can take minutes on a long line, freezing the server.
+
 /**
  * A name that suggests its value is a Secret, such as DB_PASSWORD, api_key or MCP_TOKEN. "token" isn't
  * matched as "tokens", so counts like max_tokens=1024 stay readable.
  */
 const SECRET_NAME =
-  /[\w.-]*(?:password|passwd|secret|token(?!s)|api[_-]?key|access[_-]?key|private[_-]?key|credential|authorization|cookie|session[_-]?id)[\w.-]*/
+  /(?<![\w.-])[\w.-]{0,40}?(?:password|passwd|secret|token(?!s)|api[_-]?key|access[_-]?key|private[_-]?key|credential|authorization|cookie|session[_-]?id)[\w.-]{0,40}/
     .source;
 
 const RULES: [RegExp, string][] = [
   // scheme://user:password@host keeps everything but the password.
-  [/(\b[a-z][a-z0-9+.-]*:\/\/[^\s:/@]+:)[^\s@/]+@/gi, `$1${PLACEHOLDER}@`],
+  [/(\b[a-z][a-z0-9+.-]{0,20}:\/\/[^\s:/@]{1,100}:)[^\s@/]{1,200}@/gi, `$1${PLACEHOLDER}@`],
   // A JWT: three base64url parts, the first always starting eyJ ('{"' encoded).
-  [/\beyJ[\w-]+\.[\w-]+\.[\w-]+/g, PLACEHOLDER],
+  [/(?<![\w-])eyJ[\w-]+\.[\w-]+\.[\w-]+/g, PLACEHOLDER],
   // Authorization: Bearer <token>
   [/(\bBearer\s+)[A-Za-z0-9._~+/-]+=*/gi, `$1${PLACEHOLDER}`],
   // "name": "value" in JSON. The value may contain escaped quotes.
@@ -40,7 +43,7 @@ export function redact(text: string): string {
  */
 function redactRandomLooking(text: string): string {
   return text.replace(/(?<![\w+-])[\w+-]{32,}={0,2}/g, (run, offset: number) => {
-    if (text.slice(0, offset).endsWith("sha256:")) return run;
+    if (text.slice(offset - 7, offset) === "sha256:") return run;
     const core = run.replace(/=+$/, "");
     const allHex = /^[0-9a-f]+$/i.test(core);
     const mixed = /[a-z]/.test(core) && /[A-Z]/.test(core) && /[0-9]/.test(core);

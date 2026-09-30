@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Container, Docker } from "./sources/docker.ts";
+import { CONTAINER_NAME, type Container, type Docker } from "./sources/docker.ts";
 
 /** One capability offered to Clients. The handler's text is what the Client reads. */
 export type Tool = {
@@ -27,7 +27,10 @@ const DEFAULT_LOG_LINES = 100;
 const MAX_LOG_LINES = 500;
 
 const logsInput = z.object({
-  name: z.string().describe("The Container's exact name, as list_containers shows it"),
+  name: z
+    .string()
+    .regex(CONTAINER_NAME)
+    .describe("The Container's exact name, as list_containers shows it"),
   lines: z
     .number()
     .int()
