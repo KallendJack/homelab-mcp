@@ -73,7 +73,7 @@ other Tools keep working. Config problems are the only thing that stops the serv
 | `PORT`                          | No, default `8765`        | Where the Server listens                                                 |
 | `DOCKER_URL`                    | No, default `http://socket-proxy:2375` | The read-only socket proxy                                   |
 | `PRIVATE_CONTAINERS`            | No                        | Comma-separated Container names whose logs are never returned            |
-| `DISK_PATHS`                    | No, default `/`           | Comma-separated `label=path` pairs, such as `data=/host/volume1`         |
+| `DISK_PATHS`                    | No, default `root=/`      | Comma-separated `label=path` pairs, such as `data=/host/volume1`         |
 | `GATUS_URL`                     | No, turns on Gatus        | Gatus's base URL                                                         |
 | `JELLYFIN_URL`, `JELLYFIN_API_KEY` | No, both or neither    | Turn on Jellyfin                                                         |
 | `REPORT_PATH`                   | No, turns on Report       | The Report file, mounted read-only                                       |
