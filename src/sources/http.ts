@@ -11,10 +11,10 @@ export type HttpRequests = {
 };
 
 /**
- * Asks `system` (such as "Docker" or "Gatus", used in error sentences) at `baseUrl`, sending `headers` with every
- * request. Secrets such as API keys go in headers, never in a URL, which can end up in logs and errors. Every failure becomes a
- * plain sentence: the time limit passed, it couldn't be reached, it answered with an error status or something
- * unexpected, or it stopped answering part way through.
+ * Asks `system` (such as "Docker" or "Gatus", used in error sentences) at `baseUrl`, sending `headers` with
+ * every request. Secrets such as API keys go in headers, never in a URL, which can end up in logs and errors.
+ * Every failure becomes a plain sentence: the time limit passed, it couldn't be reached, it answered with an
+ * error status or something unexpected, or it stopped answering part way through.
  */
 export function httpRequests(
   fetch: typeof globalThis.fetch,

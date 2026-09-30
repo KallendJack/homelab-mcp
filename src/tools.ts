@@ -1,11 +1,13 @@
 import { z } from "zod";
 import { humanBytes } from "./bytes.ts";
 import { closestNames } from "./closest-names.ts";
+import { formatRecentMedia, recentMediaInput } from "./recent-media.ts";
 import { Refusal } from "./refusal.ts";
 import type { Disk, DiskFailure, DiskUsage } from "./sources/disk.ts";
 import { CONTAINER_NAME, type Container, type Docker } from "./sources/docker.ts";
 import type { Gatus, HealthCheck, HealthCheckResult } from "./sources/gatus.ts";
-import type { Jellyfin, MediaItem } from "./sources/jellyfin.ts";
+import type { Jellyfin } from "./sources/jellyfin.ts";
+import { count, section } from "./wording.ts";
 
 /** One capability offered to Clients. The handler's text is what the Client reads. */
 export type Tool = {
@@ -124,47 +126,6 @@ function optionalTools({ gatus, jellyfin }: Sources): Tool[] {
   return tools;
 }
 
-const recentMediaInput = z.object({
-  days: z
-    .number()
-    .int()
-    .min(1)
-    .max(30)
-    .optional()
-    .describe("How many days back to look, from 1 to 30: 1 if left out"),
-});
-
-function formatRecentMedia(items: MediaItem[], days: number): string {
-  const window = days === 1 ? "the last day" : `the last ${days} days`;
-  const films = items.filter((i) => i.kind === "film").sort((a, b) => a.name.localeCompare(b.name));
-  const episodes = items.filter((i) => i.kind === "episode");
-  if (films.length === 0 && episodes.length === 0)
-    return `No films or episodes added in ${window}.`;
-
-  const bySeries = new Map<string, string[]>();
-  for (const e of episodes)
-    bySeries.set(e.series, [...(bySeries.get(e.series) ?? []), episodeCode(e)]);
-  const series = [...bySeries.entries()].sort(([a], [b]) => a.localeCompare(b));
-
-  return [
-    `${count(films.length, "film")} and ${count(episodes.length, "episode")} added in ${window}.`,
-    ...section("Films:", films, (f) => (f.year ? `${f.name} (${f.year})` : f.name)),
-    ...section("Episodes:", series, ([name, codes]) => `${name}: ${codes.sort().join(", ")}`),
-  ].join("\n");
-}
-
-/** S01E04, or "an episode" when Jellyfin hasn't numbered it. */
-function episodeCode(e: { season: number | undefined; episode: number | undefined }): string {
-  if (e.season === undefined || e.episode === undefined) return "an episode";
-  const two = (n: number) => String(n).padStart(2, "0");
-  return `S${two(e.season)}E${two(e.episode)}`;
-}
-
-/** "1 film", "2 films". */
-function count(n: number, word: string): string {
-  return `${n} ${word}${n === 1 ? "" : "s"}`;
-}
-
 function needsAttention(c: Container): boolean {
   return c.state !== "running" || c.status.includes("(unhealthy)");
 }
@@ -239,9 +200,4 @@ function unknownName(wanted: string, names: string[]): string {
   const closest = closestNames(wanted, names);
   const suggestion = closest.length === 0 ? "" : ` Closest: ${closest.join(", ")}.`;
   return `No Container is named "${wanted}".${suggestion} list_containers shows every name.`;
-}
-
-/** A titled list after a blank line, or nothing when there are no items. */
-function section<T>(title: string, items: T[], line: (item: T) => string): string[] {
-  return items.length === 0 ? [] : ["", title, ...items.map((item) => `- ${line(item)}`)];
 }

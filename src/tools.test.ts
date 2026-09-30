@@ -512,6 +512,67 @@ describe("recent_media", () => {
     }
   });
 
+  describe("with items made up for each case", () => {
+    const added = "2026-09-30T08:00:00.0000000Z";
+    const answersWith = (films: object[], episodes: object[] = []) => ({
+      [librariesUrl]: fixture("jellyfin/virtual-folders.json"),
+      [itemsUrl("f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1")]: { body: JSON.stringify({ Items: films }) },
+      [itemsUrl("a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2")]: { body: JSON.stringify({ Items: episodes }) },
+    });
+    const film = (name: string, date = added) => ({ Name: name, Type: "Movie", DateCreated: date });
+    const episode = (season?: number, number?: number) => ({
+      Name: "Episode",
+      Type: "Episode",
+      SeriesName: "Show",
+      ParentIndexNumber: season,
+      IndexNumber: number,
+      DateCreated: added,
+    });
+
+    it("says Jellyfin's answer is unexpected when a date isn't a date, rather than counting it as new", async () => {
+      const { fetch } = fakeFetch(answersWith([film("Film", "sometime last week")]));
+
+      await expect(recentMedia(fetch).handler({})).rejects.toThrow(
+        new SourceError("Jellyfin answered with something unexpected."),
+      );
+    });
+
+    it("removes other folder-tag styles too, such as [tmdbid=603] and {anidb-123}", async () => {
+      const { fetch } = fakeFetch(
+        answersWith([film("First Film [tmdbid=603]"), film("Second {anidb-123}")]),
+      );
+
+      const text = await recentMedia(fetch).handler({});
+      expect(text).toContain("- First Film\n- Second");
+    });
+
+    it("tidies a name of 50,000 spaces in well under a second", async () => {
+      const { fetch } = fakeFetch(answersWith([film(`A${" ".repeat(50_000)}B {tvdb-1}`)]));
+
+      const started = performance.now();
+      await recentMedia(fetch).handler({});
+      expect(performance.now() - started).toBeLessThan(250);
+    });
+
+    it("orders episode numbers as numbers, and counts unnumbered episodes once", async () => {
+      const episodes = [episode(1, 100), episode(1, 99), episode(), episode()];
+      const { fetch } = fakeFetch(answersWith([], episodes));
+
+      const text = await recentMedia(fetch).handler({});
+      expect(text).toContain("- Show: S01E99, S01E100, 2 unnumbered episodes");
+    });
+
+    it("says there may be more when a library's list was cut short while still inside the window", async () => {
+      const films = Array.from({ length: 500 }, (_, i) => film(`Film ${i}`));
+      const { fetch } = fakeFetch(answersWith(films));
+
+      const text = await recentMedia(fetch).handler({});
+      expect(text.split("\n")[1]).toBe(
+        "Only the newest 500 items in each library were read, so there may be more.",
+      );
+    });
+  });
+
   it("says Jellyfin can't be reached, giving only the error code", async () => {
     const refused = new TypeError("fetch failed", {
       cause: Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" }),
