@@ -200,6 +200,21 @@ describe("container_logs", () => {
     expect(requests).toEqual([]);
   });
 
+  it("says so when the connection drops while Docker is sending the logs", async () => {
+    const list = fakeFetch({ [containersUrl]: fixture("docker/containers.json") });
+    const brokenBody = new ReadableStream({
+      pull: (controller) => controller.error(new TypeError("terminated")),
+    });
+    const fetch = (async (input: string | URL | Request, init?: RequestInit) =>
+      String(input) === containersUrl
+        ? list.fetch(input, init)
+        : new Response(brokenBody)) as typeof globalThis.fetch;
+
+    await expect(containerLogs(fetch).handler({ name: "media-server" })).rejects.toThrow(
+      new SourceError("Docker stopped answering part way through."),
+    );
+  });
+
   it("says so when a Container has no log lines", async () => {
     const { fetch } = fakeFetch({
       [containersUrl]: fixture("docker/containers.json"),

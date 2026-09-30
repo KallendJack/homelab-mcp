@@ -37,7 +37,8 @@ function isTimeout(error: unknown): boolean {
 /** Reads Containers through the read-only socket proxy at `url` (ADR 0002). */
 export function docker(fetch: typeof globalThis.fetch, url: string): Docker {
   /** Asks Docker for `path` and reads the answer's body with `readBody`, within the time limit. */
-  async function get<T>(path: string, readBody: (response: Response) => Promise<T>): Promise<T> {
+  /** Asks Docker for `path` and returns the whole answer as bytes, within the time limit. */
+  async function get(path: string): Promise<Uint8Array> {
     // The time limit covers reading the body too, so a timeout can surface in either await.
     const signal = AbortSignal.timeout(TIMEOUT_SECONDS * 1000);
     let response: Response;
@@ -48,22 +49,21 @@ export function docker(fetch: typeof globalThis.fetch, url: string): Docker {
     }
     if (!response.ok) throw new SourceError(`Docker answered with HTTP ${response.status}.`);
     try {
-      return await readBody(response);
+      return new Uint8Array(await response.arrayBuffer());
     } catch (error) {
       if (isTimeout(error)) throw networkFailure(error);
-      throw error;
+      throw new SourceError("Docker stopped answering part way through.");
     }
   }
 
   async function getJson<T>(path: string, schema: z.ZodType<T>): Promise<T> {
-    const body = await get(path, async (response) => {
-      try {
-        return (await response.json()) as unknown;
-      } catch (error) {
-        if (isTimeout(error)) throw error;
-        return undefined;
-      }
-    });
+    const text = new TextDecoder().decode(await get(path));
+    let body: unknown;
+    try {
+      body = JSON.parse(text);
+    } catch {
+      body = undefined;
+    }
     const parsed = schema.safeParse(body);
     if (!parsed.success) throw new SourceError("Docker answered with something unexpected.");
     return parsed.data;
@@ -97,10 +97,7 @@ export function docker(fetch: typeof globalThis.fetch, url: string): Docker {
     async logs(name, lines) {
       const query = `stdout=1&stderr=1&timestamps=1&tail=${lines}`;
       const path = `/containers/${encodeURIComponent(name)}/logs?${query}`;
-      const bytes = await get(
-        path,
-        async (response) => new Uint8Array(await response.arrayBuffer()),
-      );
+      const bytes = await get(path);
       const text = new TextDecoder().decode(isFramed(bytes) ? unframe(bytes) : bytes);
       return text
         .split(/\r?\n/)
