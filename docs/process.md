@@ -88,3 +88,11 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   on a long name, the same class of bug as ticket 03's, now anchored and tested for speed. Also caught: a date that
   didn't parse would have counted as new; a full 500-item page could hide more without saying so; and episode codes
   sorted as text, putting S01E100 before S01E99.
+- **2026-09-30**: Ticket 07 (#8), Report, the last Tool of phase 1. `read_report` returns the Report file exactly as
+  written, after the time it was written, with a warning first when it's older than `REPORT_MAX_AGE_HOURS`. Tested
+  with real temporary files whose write times are set by hand, and end to end to prove the Report goes through
+  Redaction. Trying it on Windows turned up a useful refusal: a `C:\` path isn't absolute to the Linux container, so
+  config rejects it. Review caught: text and write time read separately could mismatch mid-rewrite (now one open
+  file); no size cap, so a wrong path could send a whole log to the Client (now 200 kB); a Report just over its
+  limit could read "26 hours old, more than the 26 hours" (minutes are now kept); a Report dated ahead of the clock
+  looked brand new; and a max age set without `REPORT_PATH` was silently ignored.
