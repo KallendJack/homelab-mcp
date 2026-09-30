@@ -1,0 +1,24 @@
+{
+  "Items": [
+    {
+      "Name": "Example Film",
+      "Type": "Movie",
+      "ProductionYear": 2024,
+      "DateCreated": "2026-09-30T08:00:00.0000000Z"
+    },
+    {
+      "Name": "Another Example {tmdb-12345}",
+      "Type": "Movie",
+      "ProductionYear": 2023,
+      "DateCreated": "2026-09-29T20:15:00.0000000Z"
+    },
+    {
+      "Name": "Older Film",
+      "Type": "Movie",
+      "ProductionYear": 1999,
+      "DateCreated": "2026-09-25T10:00:00.0000000Z"
+    }
+  ],
+  "TotalRecordCount": 3,
+  "StartIndex": 0
+}

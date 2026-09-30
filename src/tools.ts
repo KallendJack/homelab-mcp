@@ -1,10 +1,13 @@
 import { z } from "zod";
 import { humanBytes } from "./bytes.ts";
 import { closestNames } from "./closest-names.ts";
+import { formatRecentMedia, recentMediaInput } from "./recent-media.ts";
 import { Refusal } from "./refusal.ts";
 import type { Disk, DiskFailure, DiskUsage } from "./sources/disk.ts";
 import { CONTAINER_NAME, type Container, type Docker } from "./sources/docker.ts";
 import type { Gatus, HealthCheck, HealthCheckResult } from "./sources/gatus.ts";
+import type { Jellyfin } from "./sources/jellyfin.ts";
+import { count, section } from "./wording.ts";
 
 /** One capability offered to Clients. The handler's text is what the Client reads. */
 export type Tool = {
@@ -21,6 +24,7 @@ export type Sources = {
   disk: Disk;
   /** Optional: off unless configured, and its Tool isn't offered while off (ADR 0001). */
   gatus?: Gatus;
+  jellyfin?: Jellyfin;
 };
 
 export type ToolOptions = {
@@ -92,7 +96,7 @@ export function buildTools(sources: Sources, options: ToolOptions): Tool[] {
 }
 
 /** The Tools of optional Sources, each only when its Source is on. */
-function optionalTools({ gatus }: Sources): Tool[] {
+function optionalTools({ gatus, jellyfin }: Sources): Tool[] {
   const tools: Tool[] = [];
   if (gatus) {
     tools.push({
@@ -103,6 +107,20 @@ function optionalTools({ gatus }: Sources): Tool[] {
         "outside, rather than whether containers are running.",
       inputSchema: {},
       handler: async () => formatHealthChecks(await gatus.healthChecks()),
+    });
+  }
+  if (jellyfin) {
+    tools.push({
+      name: "recent_media",
+      description:
+        "Lists the films and TV episodes added to the homelab host's Jellyfin library in the last few days: films " +
+        "with their year, then episodes grouped by series with season and episode numbers. Use it to answer " +
+        "what's new to watch.",
+      inputSchema: recentMediaInput.shape,
+      handler: async (args) => {
+        const { days = 1 } = recentMediaInput.parse(args);
+        return formatRecentMedia(await jellyfin.recentMedia(days), days);
+      },
     });
   }
   return tools;
@@ -143,8 +161,7 @@ function formatDiskUsage(usage: DiskUsage[]): string {
     const sizes = `${humanBytes(u.used)} used, ${humanBytes(u.free)} free, ${humanBytes(u.total)} total`;
     return `- ${u.label}: ${percent}% used (${sizes})`;
   };
-  const paths = usage.length === 1 ? "1 path" : `${usage.length} paths`;
-  return [`Disk space for ${paths}.`, "", ...usage.map(line)].join("\n");
+  return [`Disk space for ${count(usage.length, "path")}.`, "", ...usage.map(line)].join("\n");
 }
 
 function formatHealthChecks(checks: HealthCheck[]): string {
@@ -166,9 +183,8 @@ function formatHealthChecks(checks: HealthCheck[]): string {
     return `${title(check)}: ${latest.passing ? "passing" : "failing"} (${time})`;
   };
 
-  const count = checks.length === 1 ? "1 Health check" : `${checks.length} Health checks`;
   return [
-    `${count}, ${failing.length} failing.`,
+    `${count(checks.length, "Health check")}, ${failing.length} failing.`,
     ...section("Failing:", failing, result),
     ...section("Passing:", passing, result),
     ...section("Not checked yet:", unchecked, title),
@@ -184,9 +200,4 @@ function unknownName(wanted: string, names: string[]): string {
   const closest = closestNames(wanted, names);
   const suggestion = closest.length === 0 ? "" : ` Closest: ${closest.join(", ")}.`;
   return `No Container is named "${wanted}".${suggestion} list_containers shows every name.`;
-}
-
-/** A titled list after a blank line, or nothing when there are no items. */
-function section<T>(title: string, items: T[], line: (item: T) => string): string[] {
-  return items.length === 0 ? [] : ["", title, ...items.map((item) => `- ${line(item)}`)];
 }

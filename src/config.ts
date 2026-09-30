@@ -12,6 +12,8 @@ export type Config = {
   diskPaths: DiskPath[];
   /** Gatus's base URL. Set, it turns on the Gatus Source and its Tool (ADR 0001). */
   gatusUrl?: string;
+  /** Jellyfin's base URL and API key. Both set, they turn on the Jellyfin Source and its Tool. */
+  jellyfin?: { url: string; apiKey: string };
 };
 
 /** A setting that stops the server at start. Its message names variables, never their values. */
@@ -39,49 +41,58 @@ function diskPath(pair: string): DiskPath | undefined {
   return { label, path };
 }
 
-const schema = z.object({
-  MCP_TOKEN: z
-    .string({ error: "MCP_TOKEN is required" })
-    .min(32, { error: "MCP_TOKEN must be at least 32 characters" }),
-  PORT: z.coerce
-    .number({ error: portError })
-    .int({ error: portError })
-    .min(1, { error: portError })
-    .max(65535, { error: portError })
-    .default(8765),
-  DOCKER_URL: z
-    .url({ protocol: /^https?$/, error: "DOCKER_URL must be an http:// or https:// address" })
-    .default("http://socket-proxy:2375"),
-  PRIVATE_CONTAINERS: z
-    .string()
-    .default("")
-    .transform(commaList)
-    // Docker's own rule for names. A name it couldn't have would never match, leaving that Container unprotected.
-    .refine((names) => names.every((name) => CONTAINER_NAME.test(name)), {
-      error:
-        "PRIVATE_CONTAINERS must be Container names separated by commas, such as chat-bridge,finance",
-    }),
-  // Empty counts as unset: compose files often pass GATUS_URL: ${GATUS_URL:-}.
-  GATUS_URL: z.preprocess(
-    (value) => (value === "" ? undefined : value),
-    z
-      .url({ protocol: /^https?$/, error: "GATUS_URL must be an http:// or https:// address" })
-      .optional(),
-  ),
-  DISK_PATHS: z
-    .string()
-    .default("root=/")
-    .transform((value, context) => {
-      const pairs = commaList(value);
-      const paths = pairs.map(diskPath).filter((p): p is DiskPath => p !== undefined);
-      const labels = new Set(paths.map((p) => p.label));
-      if (paths.length === 0 || paths.length !== pairs.length || labels.size !== paths.length) {
-        context.addIssue({ code: "custom", message: diskPathsError });
-        return z.NEVER;
-      }
-      return paths;
-    }),
-});
+/** An optional setting, where empty counts as unset: compose files often pass NAME: ${NAME:-}. */
+function optional<T extends z.ZodType>(setting: T) {
+  return z.preprocess((value) => (value === "" ? undefined : value), setting.optional());
+}
+
+const schema = z
+  .object({
+    MCP_TOKEN: z
+      .string({ error: "MCP_TOKEN is required" })
+      .min(32, { error: "MCP_TOKEN must be at least 32 characters" }),
+    PORT: z.coerce
+      .number({ error: portError })
+      .int({ error: portError })
+      .min(1, { error: portError })
+      .max(65535, { error: portError })
+      .default(8765),
+    DOCKER_URL: z
+      .url({ protocol: /^https?$/, error: "DOCKER_URL must be an http:// or https:// address" })
+      .default("http://socket-proxy:2375"),
+    PRIVATE_CONTAINERS: z
+      .string()
+      .default("")
+      .transform(commaList)
+      // Docker's own rule for names. A name it couldn't have would never match, leaving that Container unprotected.
+      .refine((names) => names.every((name) => CONTAINER_NAME.test(name)), {
+        error:
+          "PRIVATE_CONTAINERS must be Container names separated by commas, such as chat-bridge,finance",
+      }),
+    GATUS_URL: optional(
+      z.url({ protocol: /^https?$/, error: "GATUS_URL must be an http:// or https:// address" }),
+    ),
+    JELLYFIN_URL: optional(
+      z.url({ protocol: /^https?$/, error: "JELLYFIN_URL must be an http:// or https:// address" }),
+    ),
+    JELLYFIN_API_KEY: optional(z.string()),
+    DISK_PATHS: z
+      .string()
+      .default("root=/")
+      .transform((value, context) => {
+        const pairs = commaList(value);
+        const paths = pairs.map(diskPath).filter((p): p is DiskPath => p !== undefined);
+        const labels = new Set(paths.map((p) => p.label));
+        if (paths.length === 0 || paths.length !== pairs.length || labels.size !== paths.length) {
+          context.addIssue({ code: "custom", message: diskPathsError });
+          return z.NEVER;
+        }
+        return paths;
+      }),
+  })
+  .refine((env) => (env.JELLYFIN_URL === undefined) === (env.JELLYFIN_API_KEY === undefined), {
+    error: "JELLYFIN_URL and JELLYFIN_API_KEY must be set together, or neither",
+  });
 
 export function loadConfig(env: Record<string, string | undefined>): Config {
   const result = schema.safeParse(env);
@@ -98,11 +109,19 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     privateContainers: parsed.PRIVATE_CONTAINERS,
     diskPaths: parsed.DISK_PATHS,
     ...(parsed.GATUS_URL ? { gatusUrl: parsed.GATUS_URL } : {}),
+    ...(parsed.JELLYFIN_URL && parsed.JELLYFIN_API_KEY
+      ? { jellyfin: { url: parsed.JELLYFIN_URL, apiKey: parsed.JELLYFIN_API_KEY } }
+      : {}),
   };
 }
 
 /** The Sources that are on, for the start-up log: names and disk labels only, never an address. */
 export function sourcesOn(config: Config): string {
   const labels = config.diskPaths.map((p) => p.label).join(", ");
-  return ["Docker", `Disk (${labels})`, ...(config.gatusUrl ? ["Gatus"] : [])].join(", ");
+  return [
+    "Docker",
+    `Disk (${labels})`,
+    ...(config.gatusUrl ? ["Gatus"] : []),
+    ...(config.jellyfin ? ["Jellyfin"] : []),
+  ].join(", ");
 }

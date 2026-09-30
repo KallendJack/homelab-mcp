@@ -27,8 +27,8 @@ route.
 
 Small shared helpers sit beside the modules: `sources/http.ts` (`httpRequests`: every HTTP Source's requests, with the
 time limit and plain-sentence failures), `sources/time-limit.ts` (`withinTimeLimit`, for work that can't be cancelled),
-`sources/source-error.ts` (`SourceError` and `safeErrorCode`), `refusal.ts`, `bytes.ts` (`humanBytes`) and
-`closest-names.ts`.
+`sources/source-error.ts` (`SourceError` and `safeErrorCode`), `refusal.ts`, `bytes.ts` (`humanBytes`),
+`closest-names.ts`, `wording.ts` (`count`, `section`) and `recent-media.ts` (`recent_media`'s input and wording).
 
 ## Tools (phase 1)
 

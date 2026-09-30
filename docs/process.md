@@ -79,3 +79,12 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   caught: an empty `GATUS_URL`, which compose files often pass, stopped the server instead of meaning off; a refused
   connection read "failing (0 ms)", like a fast reply, now "no response"; and Gatus's real shape omits an empty group
   and can send `null` results, so the fixture now does too.
+- **2026-09-30**: Ticket 06 (#7), Recent media. `recent_media` asks Jellyfin for its libraries, keeps only film and TV
+  ones (a placeholder library in the fixture proves the rest are never asked for), then reads each library's newest
+  500 items and keeps those added inside the window, counted back from the injected `now`. The API key goes only in
+  an `Authorization` header, which the shared request helper can now send, and a test checks no URL ever contains it.
+  Config treats `JELLYFIN_URL` and `JELLYFIN_API_KEY` as a pair, and empty as unset, now one helper for every optional
+  setting. Review caught a second slow pattern: the folder-tag cleanup restarted at every space and took 1.6 seconds
+  on a long name, the same class of bug as ticket 03's, now anchored and tested for speed. Also caught: a date that
+  didn't parse would have counted as new; a full 500-item page could hide more without saying so; and episode codes
+  sorted as text, putting S01E100 before S01E99.

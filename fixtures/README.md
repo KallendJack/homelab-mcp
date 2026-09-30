@@ -17,3 +17,7 @@ The two log fixtures show both formats Docker uses for `/containers/{name}/logs`
 
 `gatus/statuses.json` is the answer to Gatus's `/api/v1/endpoints/statuses?page=1&pageSize=1`, also hand-written
 until ticket 09: two passing checks, two failing (one timed out, one refused), and one not checked yet.
+
+`jellyfin/` holds Jellyfin's `/Library/VirtualFolders` (film, TV, music and a placeholder library with no type) and
+the recent items of the film and TV libraries, hand-written until ticket 09. Folder tags such as `{tvdb-438604}` are
+left in two names on purpose, and some items are older than a day.

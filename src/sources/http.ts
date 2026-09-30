@@ -11,21 +11,23 @@ export type HttpRequests = {
 };
 
 /**
- * Asks `system` (such as "Docker" or "Gatus", used in error sentences) at `baseUrl`. Every failure becomes a
- * plain sentence: the time limit passed, it couldn't be reached, it answered with an error status or something
- * unexpected, or it stopped answering part way through.
+ * Asks `system` (such as "Docker" or "Gatus", used in error sentences) at `baseUrl`, sending `headers` with
+ * every request. Secrets such as API keys go in headers, never in a URL, which can end up in logs and errors.
+ * Every failure becomes a plain sentence: the time limit passed, it couldn't be reached, it answered with an
+ * error status or something unexpected, or it stopped answering part way through.
  */
 export function httpRequests(
   fetch: typeof globalThis.fetch,
   baseUrl: string,
   system: string,
+  headers: Record<string, string> = {},
 ): HttpRequests {
   async function get(path: string): Promise<Uint8Array> {
     // The time limit covers reading the body too, so a timeout can surface in either await.
     const signal = AbortSignal.timeout(TIME_LIMIT_SECONDS * 1000);
     let response: Response;
     try {
-      response = await fetch(`${baseUrl}${path}`, { signal });
+      response = await fetch(`${baseUrl}${path}`, { signal, headers });
     } catch (error) {
       throw networkFailure(error);
     }

@@ -1,0 +1,25 @@
+[
+  {
+    "Name": "Films",
+    "CollectionType": "movies",
+    "ItemId": "f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1",
+    "Locations": ["/media/films"]
+  },
+  {
+    "Name": "TV",
+    "CollectionType": "tvshows",
+    "ItemId": "a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2",
+    "Locations": ["/media/tv"]
+  },
+  {
+    "Name": "Music",
+    "CollectionType": "music",
+    "ItemId": "c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+    "Locations": ["/media/music"]
+  },
+  {
+    "Name": "Placeholder",
+    "ItemId": "d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4",
+    "Locations": ["/media/placeholder"]
+  }
+]
