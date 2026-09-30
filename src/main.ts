@@ -3,6 +3,7 @@ import { startServer } from "./server.ts";
 import { disk } from "./sources/disk.ts";
 import { docker } from "./sources/docker.ts";
 import { gatus } from "./sources/gatus.ts";
+import { jellyfin } from "./sources/jellyfin.ts";
 import { buildTools } from "./tools.ts";
 
 function configOrExit(): Config {
@@ -20,6 +21,9 @@ const sources = {
   docker: docker(fetch, config.dockerUrl),
   disk: disk(config.diskPaths),
   ...(config.gatusUrl ? { gatus: gatus(fetch, config.gatusUrl) } : {}),
+  ...(config.jellyfin
+    ? { jellyfin: jellyfin(fetch, config.jellyfin.url, config.jellyfin.apiKey, () => new Date()) }
+    : {}),
 };
 const tools = buildTools(sources, { privateContainers: config.privateContainers });
 const server = await startServer(config, tools);

@@ -6,6 +6,7 @@ import { Refusal } from "./refusal.ts";
 import { type DiskPath, disk } from "./sources/disk.ts";
 import { docker } from "./sources/docker.ts";
 import { gatus } from "./sources/gatus.ts";
+import { jellyfin } from "./sources/jellyfin.ts";
 import { SourceError } from "./sources/source-error.ts";
 import { fakeFetch, fixture } from "./testing/fake-fetch.ts";
 import { buildTools, type Sources, type Tool } from "./tools.ts";
@@ -416,6 +417,109 @@ describe("list_health_checks", () => {
 
     await expect(listHealthChecks(fetch).handler({})).rejects.toThrow(
       new SourceError("Gatus answered with something unexpected."),
+    );
+  });
+});
+
+describe("recent_media", () => {
+  const jellyfinUrl = "http://media.example:8096";
+  const apiKey = "test-api-key-0000";
+  const noon = new Date("2026-09-30T12:00:00Z");
+  const librariesUrl = `${jellyfinUrl}/Library/VirtualFolders`;
+  const itemsUrl = (libraryId: string) =>
+    `${jellyfinUrl}/Items?ParentId=${libraryId}&Recursive=true&IncludeItemTypes=Movie,Episode` +
+    "&Fields=DateCreated&SortBy=DateCreated&SortOrder=Descending&Limit=500";
+  // Only the film and TV libraries have answers: asking for the music or placeholder library fails the test.
+  const answers = {
+    [librariesUrl]: fixture("jellyfin/virtual-folders.json"),
+    [itemsUrl("f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1")]: fixture("jellyfin/items-films.json"),
+    [itemsUrl("a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2")]: fixture("jellyfin/items-tv.json"),
+  };
+  const sources = (fetch: typeof globalThis.fetch, now = noon, on = true): Sources => ({
+    docker: docker(fetch, dockerUrl),
+    disk: disk([]),
+    ...(on ? { jellyfin: jellyfin(fetch, jellyfinUrl, apiKey, () => now) } : {}),
+  });
+  const recentMedia = (fetch: typeof globalThis.fetch, now = noon) => {
+    const found = buildTools(sources(fetch, now), { privateContainers: [] }).find(
+      (t) => t.name === "recent_media",
+    );
+    if (!found) throw new Error("recent_media isn't offered");
+    return found;
+  };
+
+  it("is offered only when the Jellyfin Source is on", () => {
+    const { fetch } = fakeFetch({});
+    const names = (on: boolean) =>
+      buildTools(sources(fetch, noon, on), { privateContainers: [] }).map((t) => t.name);
+    expect(names(false)).not.toContain("recent_media");
+    expect(names(true)).toContain("recent_media");
+  });
+
+  it("lists films, then episodes by series, added in the last day, from film and TV libraries only", async () => {
+    const { fetch } = fakeFetch(answers);
+
+    expect(await recentMedia(fetch).handler({})).toBe(
+      [
+        "2 films and 3 episodes added in the last day.",
+        "",
+        "Films:",
+        "- Another Example (2023)",
+        "- Example Film (2024)",
+        "",
+        "Episodes:",
+        "- Example Show: S01E03, S01E04",
+        "- Second Show: S02E01",
+      ].join("\n"),
+    );
+  });
+
+  it("looks further back when asked for more days", async () => {
+    const { fetch } = fakeFetch(answers);
+
+    const text = await recentMedia(fetch).handler({ days: 7 });
+    expect(text.split("\n")[0]).toBe("3 films and 4 episodes added in the last 7 days.");
+    expect(text).toContain("- Older Film (1999)");
+    expect(text).toContain("- Example Show: S01E01, S01E03, S01E04");
+  });
+
+  it("says so plainly when nothing is new", async () => {
+    const { fetch } = fakeFetch(answers);
+    const tenDaysLater = new Date("2026-10-10T12:00:00Z");
+
+    expect(await recentMedia(fetch, tenDaysLater).handler({})).toBe(
+      "No films or episodes added in the last day.",
+    );
+  });
+
+  it.each([0, 31, 2.5])("refuses days=%s, since it's a whole number from 1 to 30", async (days) => {
+    const { fetch, requests } = fakeFetch(answers);
+
+    await expect(recentMedia(fetch).handler({ days })).rejects.toThrow();
+    expect(requests).toEqual([]);
+  });
+
+  it("sends the API key in a header, never in a URL that could reach a log", async () => {
+    const { fetch, requests } = fakeFetch(answers);
+
+    await recentMedia(fetch).handler({});
+    expect(requests.length).toBeGreaterThan(0);
+    for (const request of requests) {
+      expect(request.url).not.toContain(apiKey);
+      expect(new Headers(request.init?.headers).get("authorization")).toBe(
+        `MediaBrowser Token="${apiKey}"`,
+      );
+    }
+  });
+
+  it("says Jellyfin can't be reached, giving only the error code", async () => {
+    const refused = new TypeError("fetch failed", {
+      cause: Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" }),
+    });
+    const { fetch } = fakeFetch({ [librariesUrl]: refused });
+
+    await expect(recentMedia(fetch).handler({})).rejects.toThrow(
+      new SourceError("Couldn't reach Jellyfin (ECONNREFUSED)."),
     );
   });
 });
