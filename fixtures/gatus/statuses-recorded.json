@@ -1,0 +1,549 @@
+[
+  {
+    "name": "Actual Budget",
+    "group": "Infrastructure",
+    "key": "infrastructure_actual-budget",
+    "results": [
+      {
+        "status": 200,
+        "hostname": "192.0.2.10",
+        "duration": 4586533,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == 200",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 2000",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:24:51.986427887Z"
+      }
+    ]
+  },
+  {
+    "name": "AdGuard Home",
+    "group": "Infrastructure",
+    "key": "infrastructure_adguard-home",
+    "results": [
+      {
+        "status": 200,
+        "hostname": "192.0.2.10",
+        "duration": 1383235,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == 200",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 2000",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:24:51.761762081Z"
+      }
+    ]
+  },
+  {
+    "name": "Caddy",
+    "group": "Infrastructure",
+    "key": "infrastructure_caddy",
+    "results": [
+      {
+        "status": 308,
+        "hostname": "192.0.2.10",
+        "duration": 2120087,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == 308",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 2000",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:24:51.763635791Z"
+      }
+    ]
+  },
+  {
+    "name": "Home Assistant",
+    "group": "Infrastructure",
+    "key": "infrastructure_home-assistant",
+    "results": [
+      {
+        "status": 200,
+        "hostname": "192.0.2.10",
+        "duration": 3023483,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == 200",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 2000",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:24:51.821210446Z"
+      }
+    ]
+  },
+  {
+    "name": "Nextcloud",
+    "group": "Infrastructure",
+    "key": "infrastructure_nextcloud",
+    "results": [
+      {
+        "status": 302,
+        "hostname": "192.0.2.10",
+        "duration": 69949138,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == any(200, 302)",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 3000",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:24:52.346918145Z"
+      }
+    ]
+  },
+  {
+    "name": "Tailscale",
+    "group": "Infrastructure",
+    "key": "infrastructure_tailscale",
+    "results": [
+      {
+        "hostname": "192.0.2.10",
+        "duration": 339495,
+        "conditionResults": [
+          {
+            "condition": "[CONNECTED] == true",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:24:52.426391238Z"
+      }
+    ]
+  },
+  {
+    "name": "Bazarr",
+    "group": "Media",
+    "key": "media_bazarr",
+    "results": [
+      {
+        "status": 200,
+        "hostname": "192.0.2.10",
+        "duration": 10370763,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == any(200, 302)",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 2000",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:24:53.59030755Z"
+      }
+    ]
+  },
+  {
+    "name": "Capacitarr",
+    "group": "Media",
+    "key": "media_capacitarr",
+    "results": [
+      {
+        "status": 200,
+        "hostname": "192.0.2.10",
+        "duration": 1328208,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == 200",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 2000",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:23:55.096700487Z"
+      }
+    ]
+  },
+  {
+    "name": "Dispatcharr",
+    "group": "Media",
+    "key": "media_dispatcharr",
+    "results": [
+      {
+        "status": 200,
+        "hostname": "192.0.2.10",
+        "duration": 5919128,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == any(200, 302)",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 2000",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:24:54.211045341Z"
+      }
+    ]
+  },
+  {
+    "name": "FlareSolverr",
+    "group": "Media",
+    "key": "media_flaresolverr",
+    "results": [
+      {
+        "status": 200,
+        "hostname": "192.0.2.10",
+        "duration": 2219329,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == 200",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 2000",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:23:55.003702636Z"
+      }
+    ]
+  },
+  {
+    "name": "Jellyfin",
+    "group": "Media",
+    "key": "media_jellyfin",
+    "results": [
+      {
+        "status": 200,
+        "hostname": "192.0.2.10",
+        "duration": 3632406,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == 200",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 2000",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:24:52.655599121Z"
+      }
+    ]
+  },
+  {
+    "name": "Jellyseerr",
+    "group": "Media",
+    "key": "media_jellyseerr",
+    "results": [
+      {
+        "status": 200,
+        "hostname": "192.0.2.10",
+        "duration": 51802192,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == 200",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 2000",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:24:52.973933675Z"
+      }
+    ]
+  },
+  {
+    "name": "Profilarr",
+    "group": "Media",
+    "key": "media_profilarr",
+    "results": [
+      {
+        "status": 200,
+        "hostname": "192.0.2.10",
+        "duration": 62414615,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == any(200, 302)",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 2000",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:24:54.491608476Z"
+      }
+    ]
+  },
+  {
+    "name": "Prowlarr",
+    "group": "Media",
+    "key": "media_prowlarr",
+    "results": [
+      {
+        "status": 200,
+        "hostname": "192.0.2.10",
+        "duration": 14138446,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == any(200, 302)",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 2000",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:24:53.775002275Z"
+      }
+    ]
+  },
+  {
+    "name": "qBittorrent",
+    "group": "Media",
+    "key": "media_qbittorrent",
+    "results": [
+      {
+        "status": 200,
+        "hostname": "192.0.2.10",
+        "duration": 5864919,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == any(200, 401, 403)",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 2000",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:24:53.984464256Z"
+      }
+    ]
+  },
+  {
+    "name": "Radarr",
+    "group": "Media",
+    "key": "media_radarr",
+    "results": [
+      {
+        "status": 200,
+        "hostname": "192.0.2.10",
+        "duration": 3357972,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == any(200, 302)",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 2000",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:24:53.096885627Z"
+      }
+    ]
+  },
+  {
+    "name": "Sonarr",
+    "group": "Media",
+    "key": "media_sonarr",
+    "results": [
+      {
+        "status": 200,
+        "hostname": "192.0.2.10",
+        "duration": 2352960,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == any(200, 302)",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 2000",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:24:53.318169643Z"
+      }
+    ]
+  },
+  {
+    "name": "Teamarr",
+    "group": "Media",
+    "key": "media_teamarr",
+    "results": [
+      {
+        "status": 200,
+        "hostname": "192.0.2.10",
+        "duration": 5221131,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == any(200, 302)",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 2000",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:24:54.658548511Z"
+      }
+    ]
+  },
+  {
+    "name": "Beszel",
+    "group": "Ops",
+    "key": "ops_beszel",
+    "results": [
+      {
+        "status": 200,
+        "hostname": "192.0.2.10",
+        "duration": 793033,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == 200",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 2000",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:23:55.540157799Z"
+      }
+    ]
+  },
+  {
+    "name": "Dockge",
+    "group": "Ops",
+    "key": "ops_dockge",
+    "results": [
+      {
+        "status": 200,
+        "hostname": "192.0.2.10",
+        "duration": 2813390,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == 200",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 2000",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:23:56.208424729Z"
+      }
+    ]
+  },
+  {
+    "name": "Dozzle",
+    "group": "Ops",
+    "key": "ops_dozzle",
+    "results": [
+      {
+        "status": 200,
+        "hostname": "192.0.2.10",
+        "duration": 5746768,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == 200",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 2000",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:23:55.843412967Z"
+      }
+    ]
+  },
+  {
+    "name": "Glance",
+    "group": "Ops",
+    "key": "ops_glance",
+    "results": [
+      {
+        "status": 200,
+        "hostname": "192.0.2.10",
+        "duration": 1136114,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == 200",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 2000",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:23:55.349698254Z"
+      }
+    ]
+  },
+  {
+    "name": "homelab-mcp",
+    "group": "Ops",
+    "key": "ops_homelab-mcp",
+    "results": [
+      {
+        "status": 200,
+        "hostname": "192.0.2.10",
+        "duration": 3111870,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == 200",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 2000",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-10-01T08:23:56.00002686Z"
+      }
+    ]
+  }
+]

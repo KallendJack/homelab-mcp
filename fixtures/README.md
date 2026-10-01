@@ -21,3 +21,8 @@ until ticket 09: two passing checks, two failing (one timed out, one refused), a
 `jellyfin/` holds Jellyfin's `/Library/VirtualFolders` (film, TV, music and a placeholder library with no type) and
 the recent items of the film and TV libraries, hand-written until ticket 09. Folder tags such as `{tvdb-438604}` are
 left in two names on purpose, and some items are older than a day.
+
+`gatus/statuses-recorded.json` is the first answer **recorded from a real Host** (2026-10-01), scrubbed: the Host's
+address became `192.0.2.10`, an address reserved for documentation. It holds 23 Health checks, all passing, named
+after the apps they check. The hand-written `statuses.json` stays for the cases a healthy Host doesn't show: a
+timeout, a refused connection and a check not yet run.
