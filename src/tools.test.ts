@@ -400,6 +400,19 @@ describe("list_health_checks", () => {
     expect(await listHealthChecks(fetch).handler({})).toBe(expected);
   });
 
+  it("reads an answer recorded from a real Host's Gatus", async () => {
+    const { fetch } = fakeFetch({ [statusesUrl]: fixture("gatus/statuses-recorded.json") });
+
+    const [heading, blank, section, ...lines] = (await listHealthChecks(fetch).handler({})).split(
+      "\n",
+    );
+    expect(heading).toBe("23 Health checks, 0 failing.");
+    expect([blank, section]).toEqual(["", "Passing:"]);
+    expect(lines).toHaveLength(23);
+    for (const line of lines)
+      expect(line).toMatch(/^- (Infrastructure|Media|Ops) \/ .+: passing \(\d+ ms\)$/);
+  });
+
   it("says Gatus can't be reached, which is different from a Health check failing", async () => {
     const refused = new TypeError("fetch failed", {
       cause: Object.assign(new Error("connect ECONNREFUSED 10.1.2.3:8080"), {
