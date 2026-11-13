@@ -115,3 +115,11 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   to the log unredacted (now redacted for every Tool, since a failed command's error can quote its environment); only
   an Action's first line was logged, when the spec asks for its result; read Tools gained an empty hints object; test
   paths that looked like a real Host; and "admin mode" and "config repo" missing from the glossary.
+- **2026-11-13**: Ticket 11 (#23), the first Action: `start_container`, end to end. Admin mode needs Docker's own
+  socket, which Node's `fetch` can't reach, so `socketFetch` is a small `fetch` over a local socket with `node:http`;
+  the Docker Source stays behind the same `fetch` seam, and tests run a real HTTP server on a local socket (a named
+  pipe on Windows). `dockerAdmin` adds `start(name)`, treating Docker's 304 (already running) and 404 (gone) as
+  answers to word, not failures. The Action checks the Container exists and is stopped before asking Docker. The
+  Allowlist gained time limits: past one, the Client is told the Host may be part-way through, but the lock is held
+  until the work really ends, so a second Action can't start on a half-changed Host. `ADMIN_DOCKER_SOCKET` defaults
+  to Docker's usual path.

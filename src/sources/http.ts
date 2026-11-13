@@ -8,6 +8,11 @@ export type HttpRequests = {
   get(path: string): Promise<Uint8Array>;
   /** The answer to `path` as JSON, checked against `schema`. */
   getJson<T>(path: string, schema: z.ZodType<T>): Promise<T>;
+  /**
+   * A body-less POST to `path`, within the time limit. Any status comes back, since for an Action a status such as
+   * 304 or 404 is an answer to word, not a failure; only not getting an answer is a SourceError.
+   */
+  post(path: string): Promise<{ status: number; text: string }>;
 };
 
 /**
@@ -65,7 +70,23 @@ export function httpRequests(
     return new SourceError(`Couldn't reach ${system}${code ? ` (${code})` : ""}.`);
   }
 
-  return { get, getJson };
+  async function post(path: string): Promise<{ status: number; text: string }> {
+    const signal = AbortSignal.timeout(TIME_LIMIT_SECONDS * 1000);
+    let response: Response;
+    try {
+      response = await fetch(`${baseUrl}${path}`, { method: "POST", signal, headers });
+    } catch (error) {
+      throw networkFailure(error);
+    }
+    try {
+      return { status: response.status, text: await response.text() };
+    } catch (error) {
+      if (isTimeout(error)) throw networkFailure(error);
+      throw new SourceError(`${system} stopped answering part way through.`);
+    }
+  }
+
+  return { get, getJson, post };
 }
 
 function isTimeout(error: unknown): boolean {

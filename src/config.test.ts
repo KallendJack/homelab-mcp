@@ -196,7 +196,18 @@ describe("loadConfig in admin mode", () => {
       repoPath: "/host/stacks",
       composeFiles: ["proxy/compose.yaml", "media/compose.yml"],
       service: "homelab-mcp-admin",
+      dockerSocket: "/var/run/docker.sock",
     });
+  });
+
+  it("reaches Docker through ADMIN_DOCKER_SOCKET when it's set", () => {
+    const config = loadConfig({ ...admin, ADMIN_DOCKER_SOCKET: "/run/docker.sock" });
+    expect(config.admin?.dockerSocket).toBe("/run/docker.sock");
+  });
+
+  it("refuses an ADMIN_DOCKER_SOCKET that isn't absolute, without echoing it", () => {
+    const error = catchError(() => loadConfig({ ...admin, ADMIN_DOCKER_SOCKET: "docker.sock" }));
+    expect(error.message).toBe("ADMIN_DOCKER_SOCKET must be an absolute path");
   });
 
   it("refuses a short admin Token, naming the variable but never its value", () => {
@@ -252,7 +263,7 @@ describe("loadConfig in admin mode", () => {
       loadConfig({ MCP_TOKEN: token, ADMIN_REPO_PATH: "/host/stacks" }),
     );
     expect(error.message).toBe(
-      "ADMIN_REPO_PATH, ADMIN_COMPOSE_FILES and ADMIN_SERVICE only apply with ADMIN_TOKEN set",
+      "ADMIN_REPO_PATH, ADMIN_COMPOSE_FILES, ADMIN_SERVICE and ADMIN_DOCKER_SOCKET only apply with ADMIN_TOKEN set",
     );
   });
 });

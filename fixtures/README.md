@@ -26,3 +26,7 @@ left in two names on purpose, and some items are older than a day.
 address became `192.0.2.10`, an address reserved for documentation. It holds 23 Health checks, all passing, named
 after the apps they check. The hand-written `statuses.json` stays for the cases a healthy Host doesn't show: a
 timeout, a refused connection and a check not yet run.
+
+`docker/start-no-such-container.json` is Docker's answer to `POST /containers/{name}/start` for a Container that doesn't
+exist, hand-written from the Docker Engine API docs: nothing has the real socket to record it until ticket 16. The
+other answers to a start (204 started, 304 already running) have no body.
