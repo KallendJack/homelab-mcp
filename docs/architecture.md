@@ -21,7 +21,7 @@ route.
 | **Disk**     | Space used and free for each configured path.                                                                                                                                                                                               | `disk(paths) → { usage() }`                                          |
 | **Tools**    | Builds the Tool list from the Sources that are on: each Tool's name, description, input schema and handler, which formats the answer as plain text for the Client. Refuses logs for a Private container and names it as the reason.     | `buildTools(sources, { privateContainers }) → Tool[]`                 |
 | **Redaction**| Replaces anything that looks like a Secret with `[redacted]`. Pure code.                                                                                                                                                                    | `redact(text) → text`                                                |
-| **Allowlist** | Turns Actions into the Tools admin mode offers: each is marked as changing the Host, logs all its arguments and its answer, and refuses to start while another Action runs, naming it. Also the admin start-up line. | `allowlist(actions) → Tool[]`, `adminStartUp(admin, tools) → text` |
+| **Allowlist** | Turns Actions into the Tools admin mode offers: each is marked as changing the Host, logs all its arguments and its answer, and refuses to start while another Action runs, naming it. Also the admin start-up line. | `allowlist(actions) → Tool[]`, `adminStartUp(repoPath, tools) → text` |
 | **Server**   | The HTTP side: checks the Token on every request, serves MCP over Streamable HTTP, runs every Tool's output through Redaction, and logs each call. Also a `/healthz` route with no Token, for uptime checks.                                | `startServer(config, tools) → { url, close() }`                      |
 
 `main.ts` wires them: load Config, build the Sources that are on, build the Tools, start the Server. With `ADMIN_TOKEN`
@@ -120,5 +120,5 @@ on the Host, and runs the Compose CLI against the real socket.
 Admin mode is on when `ADMIN_TOKEN` is set, the same pattern as an optional Source. It still needs `MCP_TOKEN`, so
 config can refuse the same value for both: one Token would let any read-only Client perform Actions. The admin server
 uses the same Server module; an Action is a Tool with `changesHost` set, which makes the Server mark it with
-`destructiveHint` (so the Client asks the person first) and log its answer's first line. The one-at-a-time lock lives
+`destructiveHint` (so the Client asks the person first) and log its whole answer on one line. The one-at-a-time lock lives
 in the Allowlist, shared by every request, since the Server builds a fresh MCP server per request.

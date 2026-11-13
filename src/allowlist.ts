@@ -1,4 +1,3 @@
-import type { AdminConfig } from "./config.ts";
 import { Refusal } from "./refusal.ts";
 import type { Tool } from "./tools.ts";
 
@@ -33,8 +32,8 @@ export function allowlist(actions: Action[]): Tool[] {
   }));
 }
 
-/** What admin mode logs at start: Action names and the repo path, never a Token. */
-export function adminStartUp(admin: AdminConfig, tools: Tool[]): string {
+/** What admin mode logs at start: the Action names and the config repo's path. */
+export function adminStartUp(repoPath: string, tools: Tool[]): string {
   const names = tools.map((tool) => tool.name).join(", ") || "none";
-  return `Allowlist: ${names}. Config repo: ${admin.repoPath}. Notifications: off.`;
+  return `Allowlist: ${names}. Config repo: ${repoPath}. Notifications: off.`;
 }

@@ -1,5 +1,5 @@
 import { adminStartUp, allowlist } from "./allowlist.ts";
-import { type Config, ConfigError, loadConfig, sourcesOn } from "./config.ts";
+import { type AdminConfig, type Config, ConfigError, loadConfig, sourcesOn } from "./config.ts";
 import { type RunningServer, startServer } from "./server.ts";
 import { disk } from "./sources/disk.ts";
 import { docker } from "./sources/docker.ts";
@@ -41,20 +41,19 @@ async function startReadOnly(config: Config): Promise<RunningServer> {
 }
 
 /** The admin server: only the Allowlist, behind its own Token, and never a read Tool. */
-async function startAdmin(
-  config: Config,
-  admin: NonNullable<Config["admin"]>,
-): Promise<RunningServer> {
+async function startAdmin(admin: AdminConfig, port: number): Promise<RunningServer> {
   const tools = allowlist([]);
-  const server = await startServer({ token: admin.token, port: config.port }, tools);
+  const server = await startServer({ token: admin.token, port }, tools);
   console.log(
-    `homelab-mcp admin mode listening on port ${config.port}. ${adminStartUp(admin, tools)}`,
+    `homelab-mcp admin mode listening on port ${port}. ${adminStartUp(admin.repoPath, tools)}`,
   );
   return server;
 }
 
 const config = configOrExit();
-const server = config.admin ? await startAdmin(config, config.admin) : await startReadOnly(config);
+const server = config.admin
+  ? await startAdmin(config.admin, config.port)
+  : await startReadOnly(config);
 
 // Docker sends SIGTERM to stop a container: finish cleanly rather than being killed.
 process.on("SIGTERM", () => {

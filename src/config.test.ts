@@ -180,7 +180,7 @@ describe("loadConfig in admin mode", () => {
   const admin = {
     MCP_TOKEN: token,
     ADMIN_TOKEN: adminToken,
-    ADMIN_REPO_PATH: "/volume1/stacks",
+    ADMIN_REPO_PATH: "/host/stacks",
     ADMIN_COMPOSE_FILES: "proxy/compose.yaml, media/compose.yml",
     ADMIN_SERVICE: "homelab-mcp-admin",
   };
@@ -193,7 +193,7 @@ describe("loadConfig in admin mode", () => {
   it("turns admin mode on with ADMIN_TOKEN and the config repo's details", () => {
     expect(loadConfig(admin).admin).toEqual({
       token: adminToken,
-      repoPath: "/volume1/stacks",
+      repoPath: "/host/stacks",
       composeFiles: ["proxy/compose.yaml", "media/compose.yml"],
       service: "homelab-mcp-admin",
     });
@@ -225,7 +225,7 @@ describe("loadConfig in admin mode", () => {
   });
 
   it.each([
-    "/volume1/stacks/proxy/compose.yaml",
+    "/host/stacks/proxy/compose.yaml",
     "../other/compose.yaml",
     "proxy/../../compose.yaml",
     "proxy/README.md",
@@ -249,7 +249,7 @@ describe("loadConfig in admin mode", () => {
 
   it("refuses admin settings without ADMIN_TOKEN, rather than ignoring them", () => {
     const error = catchError(() =>
-      loadConfig({ MCP_TOKEN: token, ADMIN_REPO_PATH: "/volume1/stacks" }),
+      loadConfig({ MCP_TOKEN: token, ADMIN_REPO_PATH: "/host/stacks" }),
     );
     expect(error.message).toBe(
       "ADMIN_REPO_PATH, ADMIN_COMPOSE_FILES and ADMIN_SERVICE only apply with ADMIN_TOKEN set",

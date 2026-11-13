@@ -42,7 +42,7 @@ const diskPathsError =
 
 const composeFilesError =
   "ADMIN_COMPOSE_FILES must be different .yaml or .yml paths inside the config repo, separated by commas, such as proxy/compose.yaml";
-const ADMIN_DETAILS = ["ADMIN_REPO_PATH", "ADMIN_COMPOSE_FILES", "ADMIN_SERVICE"] as const;
+const REQUIRED_IN_ADMIN_MODE = ["ADMIN_REPO_PATH", "ADMIN_COMPOSE_FILES", "ADMIN_SERVICE"] as const;
 
 /** Compose's rule for Service names, starting with a letter or digit so a name can't pass for a CLI option. */
 export const SERVICE_NAME = /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$/;
@@ -166,8 +166,8 @@ const schema = z
   })
   .superRefine((env, context) => {
     if (env.ADMIN_TOKEN === undefined) {
-      // Admin details without the Token that turns admin mode on are a mistake, not a choice.
-      if (ADMIN_DETAILS.some((name) => env[name] !== undefined)) {
+      // Admin settings without the Token that turns admin mode on are a mistake, not a choice.
+      if (REQUIRED_IN_ADMIN_MODE.some((name) => env[name] !== undefined)) {
         context.addIssue({
           code: "custom",
           message:
@@ -180,7 +180,7 @@ const schema = z
     if (env.ADMIN_TOKEN === env.MCP_TOKEN) {
       context.addIssue({ code: "custom", message: "ADMIN_TOKEN must be different from MCP_TOKEN" });
     }
-    for (const name of ADMIN_DETAILS) {
+    for (const name of REQUIRED_IN_ADMIN_MODE) {
       if (env[name] === undefined) {
         context.addIssue({ code: "custom", message: `${name} is required in admin mode` });
       }

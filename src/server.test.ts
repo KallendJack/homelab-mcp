@@ -194,9 +194,10 @@ describe("the Server", () => {
     expect(result.content).toEqual([{ type: "text", text: refusal.message }]);
   });
 
-  it("hides the details of an unexpected error from the Client and logs them", async () => {
+  it("hides the details of an unexpected error from the Client and logs them, redacted", async () => {
     const logged = vi.spyOn(console, "error").mockImplementation(() => {});
-    const { url } = await start([toolThatThrows(new Error("secret internal detail"))]);
+    const crash = new Error("internal detail from a command run with TOKEN=abc123secret");
+    const { url } = await start([toolThatThrows(crash)]);
     const client = await connect(url);
 
     const result = await client.callTool({ name: "broken_tool", arguments: {} });
@@ -205,9 +206,19 @@ describe("the Server", () => {
       { type: "text", text: "broken_tool failed unexpectedly; the server log has the details." },
     ]);
     expect(logged).toHaveBeenCalledWith(
-      expect.stringMatching(/^broken_tool crashed after \d+ ms$/),
-      expect.objectContaining({ message: "secret internal detail" }),
+      expect.stringMatching(
+        /^broken_tool crashed after \d+ ms: Error: internal detail from a command run with TOKEN=\[redacted\]\n\s+at /,
+      ),
     );
+    expect(String(logged.mock.calls[0])).not.toContain("abc123secret");
+  });
+
+  it("offers read Tools with no hints, exactly as before admin mode existed", async () => {
+    const { url } = await start(realTools());
+    const client = await connect(url);
+
+    const [tool] = (await client.listTools()).tools;
+    expect(tool?.annotations).toBeUndefined();
   });
 
   it("keeps serving the other Tools after one fails", async () => {
@@ -268,7 +279,7 @@ describe("the Server", () => {
     });
     expect(logged).toHaveBeenCalledWith(
       expect.stringMatching(
-        /^start_container \{"name":"vpn-client","note":"API_KEY=\[redacted\]"\} ok in \d+ ms: Started vpn-client\.$/,
+        /^start_container \{"name":"vpn-client","note":"API_KEY=\[redacted\]"\} ok in \d+ ms: Started vpn-client\. \/ It is running\.$/,
       ),
     );
   });

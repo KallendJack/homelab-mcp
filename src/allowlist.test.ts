@@ -65,26 +65,18 @@ describe("allowlist", () => {
 });
 
 describe("adminStartUp", () => {
-  const admin = {
-    token: "admin-test-token-0123456789-abcdef",
-    repoPath: "/volume1/stacks",
-    composeFiles: ["proxy/compose.yaml"],
-    service: "homelab-mcp-admin",
-  };
-
-  it("names the Allowlist, the config repo and whether Notifications are on, and no Secret", () => {
+  it("names the Allowlist, the config repo and whether Notifications are on", () => {
     const tools = allowlist([
       heldAction("pull_config").action,
       heldAction("start_container").action,
     ]);
-    const line = adminStartUp(admin, tools);
+    const line = adminStartUp("/host/stacks", tools);
     expect(line).toBe(
-      "Allowlist: pull_config, start_container. Config repo: /volume1/stacks. Notifications: off.",
+      "Allowlist: pull_config, start_container. Config repo: /host/stacks. Notifications: off.",
     );
-    expect(line).not.toContain(admin.token);
   });
 
   it("says so when the Allowlist is empty", () => {
-    expect(adminStartUp(admin, [])).toMatch(/^Allowlist: none\./);
+    expect(adminStartUp("/host/stacks", [])).toMatch(/^Allowlist: none\./);
   });
 });
