@@ -18,7 +18,9 @@ export function fakeFetch(answers: Record<string, FakeAnswer>): FakeFetch {
     const answer = answers[url];
     if (answer === undefined) throw new Error(`fake fetch has no answer for ${url}`);
     if (answer instanceof Error) throw answer;
-    return new Response(answer.body, { status: answer.status ?? 200 });
+    const status = answer.status ?? 200;
+    // A Response for 204 or 304 must have no body at all, as a real one from Docker has none.
+    return new Response(status === 204 || status === 304 ? null : answer.body, { status });
   };
   return { fetch: fake as typeof fetch, requests };
 }

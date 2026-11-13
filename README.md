@@ -119,6 +119,7 @@ the variable but never its value.
 | `ADMIN_REPO_PATH` | In admin mode | The config repo's absolute path, the same inside the container as on the Host |
 | `ADMIN_COMPOSE_FILES` | In admin mode | Comma-separated `.yaml` or `.yml` paths inside the config repo, such as `proxy/compose.yaml` |
 | `ADMIN_SERVICE` | In admin mode | The admin server's own Service, which it never recreates |
+| `ADMIN_DOCKER_SOCKET` | No, default `/var/run/docker.sock` | Docker's own socket, mounted into the admin container only. Never give it to the read-only one (ADR 0002) |
 
 An empty value counts as unset, so `NAME: ${NAME:-}` in a Compose file is fine.
 

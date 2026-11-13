@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -10,20 +10,26 @@ import { type Action, allowlist } from "./allowlist.ts";
 import { Refusal } from "./refusal.ts";
 import { type RunningServer, startServer } from "./server.ts";
 import { disk } from "./sources/disk.ts";
-import { docker } from "./sources/docker.ts";
+import { docker, dockerAdmin } from "./sources/docker.ts";
 import { gatus } from "./sources/gatus.ts";
 import { report } from "./sources/report.ts";
+import { socketFetch } from "./sources/socket-fetch.ts";
 import { SourceError } from "./sources/source-error.ts";
+import { startContainer } from "./start-container.ts";
 import { fakeFetch, fixture } from "./testing/fake-fetch.ts";
+import { serveOnLocalSocket } from "./testing/local-socket.ts";
 import { buildTools, type Tool } from "./tools.ts";
 
 const token = "test-token-0123456789-0123456789-abcdef";
 const dockerUrl = "http://proxy.example:2375";
 
 let server: RunningServer | undefined;
+let fakeDocker: { close(): Promise<void> } | undefined;
 afterEach(async () => {
   await server?.close();
   server = undefined;
+  await fakeDocker?.close();
+  fakeDocker = undefined;
   vi.restoreAllMocks();
 });
 
@@ -304,6 +310,34 @@ describe("the Server", () => {
         /^start_container \{"name":"vpn-client"\} failed in \d+ ms: vpn-client won't start: TOKEN=\[redacted\]$/,
       ),
     );
+  });
+
+  it("starts a stopped Container end to end, through Docker's own socket", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    const started: string[] = [];
+    const dockerOnSocket = await serveOnLocalSocket((request, response) => {
+      if (request.method === "GET" && request.url === "/containers/json?all=true") {
+        response.end(readFileSync(new URL("../fixtures/docker/containers.json", import.meta.url)));
+      } else if (request.method === "POST" && request.url === "/containers/backup-job/start") {
+        started.push("backup-job");
+        response.statusCode = 204;
+        response.end();
+      } else {
+        response.statusCode = 404;
+        response.end('{"message":"page not found"}');
+      }
+    });
+    fakeDocker = dockerOnSocket;
+    const action = startContainer(dockerAdmin(socketFetch(dockerOnSocket.path), "http://docker"));
+    const { url } = await start(allowlist([action]));
+    const client = await connect(url);
+
+    const result = await client.callTool({
+      name: "start_container",
+      arguments: { name: "backup-job" },
+    });
+    expect(result.content).toEqual([{ type: "text", text: "Started backup-job. It was exited." }]);
+    expect(started).toEqual(["backup-job"]);
   });
 
   it("runs the Report through Redaction like every other answer", async () => {

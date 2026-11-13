@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { httpRequests } from "./http.ts";
+import { SourceError } from "./source-error.ts";
 
 export type Container = {
   name: string;
@@ -14,6 +15,14 @@ export type Docker = {
   containers(): Promise<Container[]>;
   /** The last `lines` lines of a Container's logs, oldest first, each starting with its date and time. */
   logs(name: string, lines: number): Promise<string[]>;
+};
+
+/** How a request to start a Container ended. Anything else Docker says is a SourceError carrying its message. */
+export type StartResult = "started" | "already running" | "no such container";
+
+/** Docker as admin mode sees it, through the real socket: the Container list, and starting one. */
+export type DockerAdmin = Pick<Docker, "containers"> & {
+  start(name: string): Promise<StartResult>;
 };
 
 /** Docker's rule for Container names. Nothing else can be one, so anything else can be refused early. */
@@ -55,6 +64,37 @@ export function docker(fetch: typeof globalThis.fetch, url: string): Docker {
         .map(shortenTimestamp);
     },
   };
+}
+
+const errorMessage = z.object({ message: z.string() });
+
+/** Docker through the real socket, for admin mode only. `fetch` reaches the socket (`socketFetch`). */
+export function dockerAdmin(fetch: typeof globalThis.fetch, url: string): DockerAdmin {
+  const { post } = httpRequests(fetch, url, "Docker");
+  const reader = docker(fetch, url);
+
+  return {
+    containers: () => reader.containers(),
+
+    async start(name) {
+      const { status, text } = await post(`/containers/${encodeURIComponent(name)}/start`);
+      if (status === 204) return "started";
+      if (status === 304) return "already running";
+      if (status === 404) return "no such container";
+      // Docker explains a failure in JSON; its message is passed on, and Redaction runs on everything shown.
+      const parsed = errorMessage.safeParse(safeJson(text));
+      const why = parsed.success ? parsed.data.message : `HTTP ${status}`;
+      throw new SourceError(`Docker couldn't start ${name}: ${why}`);
+    },
+  };
+}
+
+function safeJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
 }
 
 /**
