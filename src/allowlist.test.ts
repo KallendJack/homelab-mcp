@@ -57,6 +57,37 @@ describe("allowlist", () => {
     await expect(next).resolves.toBe("started");
   });
 
+  it("reports an Action over its time limit as timed out, saying the Host may be part-way through", async () => {
+    const start = heldAction("start_container");
+    const [tool] = allowlist([{ ...start.action, timeLimitSeconds: 0.05 }]);
+
+    await expect(tool?.handler({})).rejects.toThrow(
+      new Refusal(
+        "start_container didn't finish within 0.05 seconds. It may still be running, so the Host may be " +
+          "part-way through: check before trying again.",
+      ),
+    );
+    start.finish("started");
+  });
+
+  it("keeps refusing other Actions until a timed-out one has really finished", async () => {
+    const start = heldAction("start_container");
+    const pull = heldAction("pull_config");
+    const [startTool, pullTool] = allowlist([
+      { ...start.action, timeLimitSeconds: 0.05 },
+      pull.action,
+    ]);
+
+    await expect(startTool?.handler({})).rejects.toThrow(/didn't finish within/);
+    await expect(pullTool?.handler({})).rejects.toThrow(/start_container is still running/);
+
+    start.finish("started");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const next = pullTool?.handler({});
+    pull.finish("pulled");
+    await expect(next).resolves.toBe("pulled");
+  });
+
   it("marks every Action as one that changes the Host, and logs all its arguments", () => {
     const [tool] = allowlist([heldAction("start_container").action]);
     expect(tool?.changesHost).toBe(true);
