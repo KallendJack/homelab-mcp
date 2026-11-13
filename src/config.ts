@@ -16,6 +16,19 @@ export type Config = {
   jellyfin?: { url: string; apiKey: string };
   /** The Report file and how old it may be before it's a Stale report. Set, it turns on the Report Source. */
   report?: { path: string; maxAgeHours: number };
+  /** Set, the server runs in admin mode: it offers the Allowlist instead of the read Tools. */
+  admin?: AdminConfig;
+};
+
+export type AdminConfig = {
+  /** The Token for admin mode, never the read-only one. */
+  token: string;
+  /** The config repo, mounted at the same path it has on the Host, since Compose resolves bind mounts there. */
+  repoPath: string;
+  /** The Compose files, relative to the config repo. */
+  composeFiles: string[];
+  /** The admin server's own Service, which it must never recreate. */
+  service: string;
 };
 
 /** A setting that stops the server at start. Its message names variables, never their values. */
@@ -26,6 +39,23 @@ const reportAgeError = "REPORT_MAX_AGE_HOURS must be a whole number of hours abo
 const DEFAULT_REPORT_MAX_AGE_HOURS = 26;
 const diskPathsError =
   "DISK_PATHS must be label=path pairs separated by commas, such as data=/host/volume1. Each label is a different word of letters, digits, - _ or ., and each path is absolute, without = or ,";
+
+const composeFilesError =
+  "ADMIN_COMPOSE_FILES must be different .yaml or .yml paths inside the config repo, separated by commas, such as proxy/compose.yaml";
+const ADMIN_DETAILS = ["ADMIN_REPO_PATH", "ADMIN_COMPOSE_FILES", "ADMIN_SERVICE"] as const;
+
+/** Compose's rule for Service names, starting with a letter or digit so a name can't pass for a CLI option. */
+export const SERVICE_NAME = /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$/;
+
+/** "proxy/compose.yaml" is inside the repo; "/abs.yaml", "../x.yaml" and "a//b.yaml" aren't. */
+function isComposeFile(path: string): boolean {
+  const parts = path.split("/");
+  return (
+    /\.ya?ml$/.test(path) &&
+    !path.includes("\\") &&
+    parts.every((part) => part !== "" && part !== "." && part !== "..")
+  );
+}
 
 /** A label is shown to the Client, so it's one plain word. */
 const DISK_LABEL = /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,31}$/;
@@ -97,6 +127,35 @@ const schema = z
         }
         return paths;
       }),
+    ADMIN_TOKEN: z
+      .string()
+      .min(32, { error: "ADMIN_TOKEN must be at least 32 characters" })
+      .optional(),
+    ADMIN_REPO_PATH: z
+      .string()
+      .refine((path) => path.startsWith("/"), { error: "ADMIN_REPO_PATH must be an absolute path" })
+      .optional(),
+    ADMIN_COMPOSE_FILES: z
+      .string()
+      .transform((value, context) => {
+        const files = commaList(value);
+        if (
+          files.length === 0 ||
+          !files.every(isComposeFile) ||
+          new Set(files).size !== files.length
+        ) {
+          context.addIssue({ code: "custom", message: composeFilesError });
+          return z.NEVER;
+        }
+        return files;
+      })
+      .optional(),
+    ADMIN_SERVICE: z
+      .string()
+      .regex(SERVICE_NAME, {
+        error: "ADMIN_SERVICE must be a Service name, such as homelab-mcp-admin",
+      })
+      .optional(),
   })
   .refine((env) => (env.JELLYFIN_URL === undefined) === (env.JELLYFIN_API_KEY === undefined), {
     error: "JELLYFIN_URL and JELLYFIN_API_KEY must be set together, or neither",
@@ -104,6 +163,28 @@ const schema = z
   // A half-set pair stops the server, as a max age with nothing to apply it to would otherwise be ignored.
   .refine((env) => env.REPORT_MAX_AGE_HOURS === undefined || env.REPORT_PATH !== undefined, {
     error: "REPORT_MAX_AGE_HOURS only applies with REPORT_PATH set",
+  })
+  .superRefine((env, context) => {
+    if (env.ADMIN_TOKEN === undefined) {
+      // Admin details without the Token that turns admin mode on are a mistake, not a choice.
+      if (ADMIN_DETAILS.some((name) => env[name] !== undefined)) {
+        context.addIssue({
+          code: "custom",
+          message:
+            "ADMIN_REPO_PATH, ADMIN_COMPOSE_FILES and ADMIN_SERVICE only apply with ADMIN_TOKEN set",
+        });
+      }
+      return;
+    }
+    // One Token for both would let any read-only Client perform Actions.
+    if (env.ADMIN_TOKEN === env.MCP_TOKEN) {
+      context.addIssue({ code: "custom", message: "ADMIN_TOKEN must be different from MCP_TOKEN" });
+    }
+    for (const name of ADMIN_DETAILS) {
+      if (env[name] === undefined) {
+        context.addIssue({ code: "custom", message: `${name} is required in admin mode` });
+      }
+    }
   });
 
 export function loadConfig(env: Record<string, string | undefined>): Config {
@@ -131,6 +212,19 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
           report: {
             path: parsed.REPORT_PATH,
             maxAgeHours: parsed.REPORT_MAX_AGE_HOURS ?? DEFAULT_REPORT_MAX_AGE_HOURS,
+          },
+        }
+      : {}),
+    ...(parsed.ADMIN_TOKEN &&
+    parsed.ADMIN_REPO_PATH &&
+    parsed.ADMIN_COMPOSE_FILES &&
+    parsed.ADMIN_SERVICE
+      ? {
+          admin: {
+            token: parsed.ADMIN_TOKEN,
+            repoPath: parsed.ADMIN_REPO_PATH,
+            composeFiles: parsed.ADMIN_COMPOSE_FILES,
+            service: parsed.ADMIN_SERVICE,
           },
         }
       : {}),
