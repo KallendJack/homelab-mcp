@@ -55,7 +55,12 @@ record it, and tell the person it happened.
 
 **`recreate_service`**
 
-10. Runs the dry run first and refuses if it would touch any Container other than the named Service's own.
+10. Runs the dry run first and refuses if it would touch any Container other than the named Service's own. In
+    practice (ticket 13): a recreate with `--no-deps` only ever touches the Service's own Containers, so the guard is
+    the other Services that would be disturbed anyway: ones sharing its network (`network_mode: service:<name>`)
+    or restarting with it (`depends_on` with `restart: true`), read from Compose's resolved model. What changes is
+    decided by Compose's config hash against the one on each Container, and Compose's own dry run is shown to the
+    person, not parsed: its wording isn't a stable interface.
 11. Pulls that Service's image, recreates and starts only that Service (never its dependencies), then waits up to
     two minutes for it to be running, and healthy if it has a healthcheck, and returns the result.
 12. Refuses the server's own Service, saying it must be recreated from the Host, since recreating yourself kills
