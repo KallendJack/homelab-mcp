@@ -1,5 +1,6 @@
+import { adminStartUp, allowlist } from "./allowlist.ts";
 import { type Config, ConfigError, loadConfig, sourcesOn } from "./config.ts";
-import { startServer } from "./server.ts";
+import { type RunningServer, startServer } from "./server.ts";
 import { disk } from "./sources/disk.ts";
 import { docker } from "./sources/docker.ts";
 import { gatus } from "./sources/gatus.ts";
@@ -17,24 +18,43 @@ function configOrExit(): Config {
   }
 }
 
+/** The everyday server: the read Tools, through the read-only socket proxy. */
+async function startReadOnly(config: Config): Promise<RunningServer> {
+  const sources = {
+    docker: docker(fetch, config.dockerUrl),
+    disk: disk(config.diskPaths),
+    ...(config.gatusUrl ? { gatus: gatus(fetch, config.gatusUrl) } : {}),
+    ...(config.jellyfin
+      ? { jellyfin: jellyfin(fetch, config.jellyfin.url, config.jellyfin.apiKey, () => new Date()) }
+      : {}),
+    ...(config.report
+      ? { report: report(config.report.path, config.report.maxAgeHours, () => new Date()) }
+      : {}),
+  };
+  const tools = buildTools(sources, { privateContainers: config.privateContainers });
+  const server = await startServer(config, tools);
+  const privateList = config.privateContainers.join(", ") || "none";
+  console.log(
+    `homelab-mcp listening on port ${config.port}. Sources on: ${sourcesOn(config)}. Private containers: ${privateList}.`,
+  );
+  return server;
+}
+
+/** The admin server: only the Allowlist, behind its own Token, and never a read Tool. */
+async function startAdmin(
+  config: Config,
+  admin: NonNullable<Config["admin"]>,
+): Promise<RunningServer> {
+  const tools = allowlist([]);
+  const server = await startServer({ token: admin.token, port: config.port }, tools);
+  console.log(
+    `homelab-mcp admin mode listening on port ${config.port}. ${adminStartUp(admin, tools)}`,
+  );
+  return server;
+}
+
 const config = configOrExit();
-const sources = {
-  docker: docker(fetch, config.dockerUrl),
-  disk: disk(config.diskPaths),
-  ...(config.gatusUrl ? { gatus: gatus(fetch, config.gatusUrl) } : {}),
-  ...(config.jellyfin
-    ? { jellyfin: jellyfin(fetch, config.jellyfin.url, config.jellyfin.apiKey, () => new Date()) }
-    : {}),
-  ...(config.report
-    ? { report: report(config.report.path, config.report.maxAgeHours, () => new Date()) }
-    : {}),
-};
-const tools = buildTools(sources, { privateContainers: config.privateContainers });
-const server = await startServer(config, tools);
-const privateList = config.privateContainers.join(", ") || "none";
-console.log(
-  `homelab-mcp listening on port ${config.port}. Sources on: ${sourcesOn(config)}. Private containers: ${privateList}.`,
-);
+const server = config.admin ? await startAdmin(config, config.admin) : await startReadOnly(config);
 
 // Docker sends SIGTERM to stop a container: finish cleanly rather than being killed.
 process.on("SIGTERM", () => {

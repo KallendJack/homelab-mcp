@@ -115,6 +115,10 @@ the variable but never its value.
 | `JELLYFIN_URL`, `JELLYFIN_API_KEY` | No, both or neither                    | Turn on Jellyfin. The key is only ever sent in a header                                         |
 | `REPORT_PATH`                      | No, turns on the Report                | The Report file's absolute path, mounted read-only                                              |
 | `REPORT_MAX_AGE_HOURS`             | No, default `26`; only with `REPORT_PATH` | Whole hours; an older Report gets a warning                                                  |
+| `ADMIN_TOKEN` | No, turns on admin mode; 32+ characters, not `MCP_TOKEN` | The Token for admin mode. The server then offers only the Allowlist, and no read Tool |
+| `ADMIN_REPO_PATH` | In admin mode | The config repo's absolute path, the same inside the container as on the Host |
+| `ADMIN_COMPOSE_FILES` | In admin mode | Comma-separated `.yaml` or `.yml` paths inside the config repo, such as `proxy/compose.yaml` |
+| `ADMIN_SERVICE` | In admin mode | The admin server's own Service, which it never recreates |
 
 An empty value counts as unset, so `NAME: ${NAME:-}` in a Compose file is fine.
 
