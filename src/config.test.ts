@@ -265,6 +265,64 @@ describe("loadConfig in admin mode", () => {
     },
   );
 
+  it("leaves reload_proxy and Notifications off unless they're configured", () => {
+    const config = loadConfig(admin);
+    expect(config.admin?.proxy).toBeUndefined();
+    expect(config.admin?.notifications).toBeUndefined();
+  });
+
+  it("turns reload_proxy on with the proxy's Container and its reload command, split into words", () => {
+    const config = loadConfig({
+      ...admin,
+      ADMIN_PROXY_CONTAINER: "proxy",
+      ADMIN_PROXY_RELOAD_COMMAND: "proxy  reload --config /etc/proxy/config",
+    });
+    expect(config.admin?.proxy).toEqual({
+      container: "proxy",
+      command: ["proxy", "reload", "--config", "/etc/proxy/config"],
+    });
+  });
+
+  it("refuses half the reload_proxy pair", () => {
+    const error = catchError(() => loadConfig({ ...admin, ADMIN_PROXY_CONTAINER: "proxy" }));
+    expect(error.message).toBe(
+      "ADMIN_PROXY_CONTAINER and ADMIN_PROXY_RELOAD_COMMAND must be set together, or neither",
+    );
+  });
+
+  it("turns Notifications on with the ntfy address and topic", () => {
+    const config = loadConfig({
+      ...admin,
+      NTFY_URL: "https://push.example",
+      NTFY_TOPIC: "test-topic-0123456789",
+    });
+    expect(config.admin?.notifications).toEqual({
+      url: "https://push.example",
+      topic: "test-topic-0123456789",
+    });
+  });
+
+  it("refuses half the Notifications pair, naming the variables but never the topic", () => {
+    const error = catchError(() => loadConfig({ ...admin, NTFY_TOPIC: "test-topic-0123456789" }));
+    expect(error.message).toBe("NTFY_URL and NTFY_TOPIC must be set together, or neither");
+  });
+
+  it("refuses a topic ntfy couldn't have, without echoing it", () => {
+    const error = catchError(() =>
+      loadConfig({ ...admin, NTFY_URL: "https://push.example", NTFY_TOPIC: "has spaces" }),
+    );
+    expect(error.message).toBe(
+      "NTFY_TOPIC must be 1 to 64 letters, digits, - or _, such as homelab-alerts-x7k2",
+    );
+  });
+
+  it("refuses Notifications outside admin mode, where there are no Actions to tell of", () => {
+    const error = catchError(() =>
+      loadConfig({ MCP_TOKEN: token, NTFY_URL: "https://push.example", NTFY_TOPIC: "a-topic" }),
+    );
+    expect(error.message).toMatch(/only apply with ADMIN_TOKEN set/);
+  });
+
   it("refuses admin settings without ADMIN_TOKEN, rather than ignoring them", () => {
     const error = catchError(() =>
       loadConfig({ MCP_TOKEN: token, ADMIN_REPO_PATH: "/host/stacks" }),

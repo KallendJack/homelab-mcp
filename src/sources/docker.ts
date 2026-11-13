@@ -28,7 +28,13 @@ export type DockerAdmin = Pick<Docker, "containers"> & {
   start(name: string): Promise<StartResult>;
   /** The Containers Compose made for one Service of one project, found by the labels it puts on them. */
   serviceContainers(project: string, service: string): Promise<ServiceContainer[]>;
+  /** Runs a fixed command in a running Container and waits for it: its exit code and what it printed. */
+  exec(name: string, command: string[]): Promise<ExecResult>;
 };
+
+export type ExecResult =
+  | { ran: true; exitCode: number; output: string }
+  | { ran: false; reason: "no such container" | "not running" };
 
 const CONFIG_HASH_LABEL = "com.docker.compose.config-hash";
 
@@ -82,6 +88,8 @@ export function docker(fetch: typeof globalThis.fetch, url: string): Docker {
 }
 
 const errorMessage = z.object({ message: z.string() });
+const execCreated = z.object({ Id: z.string() });
+const execInspected = z.object({ ExitCode: z.number().nullable() });
 
 const labelledContainerList = z.array(
   z.object({
@@ -113,6 +121,31 @@ export function dockerAdmin(fetch: typeof globalThis.fetch, url: string): Docker
       }));
     },
 
+    async exec(name, command) {
+      const create = await post(`/containers/${encodeURIComponent(name)}/exec`, {
+        json: { AttachStdout: true, AttachStderr: true, Cmd: command },
+      });
+      if (create.status === 404) return { ran: false, reason: "no such container" };
+      if (create.status === 409) return { ran: false, reason: "not running" };
+      const created = execCreated.safeParse(safeJson(create.text));
+      if (create.status !== 201 || !created.success) {
+        throw new SourceError(`Docker couldn't run a command in ${name}: ${dockerReason(create)}`);
+      }
+      const id = encodeURIComponent(created.data.Id);
+      // Without Detach, Docker answers with the command's output once it has finished.
+      const started = await post(`/exec/${id}/start`, { json: { Detach: false, Tty: false } });
+      if (started.status !== 200) {
+        throw new SourceError(`Docker couldn't run a command in ${name}: ${dockerReason(started)}`);
+      }
+      const bytes = isFramed(started.bytes) ? unframe(started.bytes) : started.bytes;
+      const { ExitCode } = await getJson(`/exec/${id}/json`, execInspected);
+      return {
+        ran: true,
+        exitCode: ExitCode ?? -1,
+        output: new TextDecoder().decode(bytes).trim(),
+      };
+    },
+
     async start(name) {
       const { status, text } = await post(`/containers/${encodeURIComponent(name)}/start`);
       if (status === 204) return "started";
@@ -124,6 +157,12 @@ export function dockerAdmin(fetch: typeof globalThis.fetch, url: string): Docker
       throw new SourceError(`Docker couldn't start ${name}: ${why}`);
     },
   };
+}
+
+/** Docker's own explanation of a failed request, or its status when it gave none. */
+function dockerReason({ status, text }: { status: number; text: string }): string {
+  const parsed = errorMessage.safeParse(safeJson(text));
+  return parsed.success ? parsed.data.message : `HTTP ${status}`;
 }
 
 function safeJson(text: string): unknown {

@@ -2,12 +2,14 @@ import { adminStartUp, allowlist } from "./allowlist.ts";
 import { type AdminConfig, type Config, ConfigError, loadConfig, sourcesOn } from "./config.ts";
 import { pullConfig } from "./pull-config.ts";
 import { previewService, recreateService } from "./recreate-service.ts";
+import { reloadProxy } from "./reload-proxy.ts";
 import { type RunningServer, startServer } from "./server.ts";
 import { compose } from "./sources/compose.ts";
 import { disk } from "./sources/disk.ts";
 import { docker, dockerAdmin } from "./sources/docker.ts";
 import { gatus } from "./sources/gatus.ts";
 import { jellyfin } from "./sources/jellyfin.ts";
+import { ntfy } from "./sources/ntfy.ts";
 import { report } from "./sources/report.ts";
 import { socketFetch } from "./sources/socket-fetch.ts";
 import { startContainer } from "./start-container.ts";
@@ -59,16 +61,23 @@ async function startAdmin(admin: AdminConfig, port: number): Promise<RunningServ
     composeFiles: admin.composeFiles,
     ownService: admin.service,
   };
-  const tools = allowlist([
-    pullConfig(admin),
-    previewService(services),
-    recreateService(services),
-    startContainer(host),
-  ]);
-  const server = await startServer({ token: admin.token, port }, tools);
-  console.log(
-    `homelab-mcp admin mode listening on port ${port}. ${adminStartUp(admin.repoPath, tools)}`,
+  const notifier = admin.notifications
+    ? ntfy(fetch, admin.notifications.url, admin.notifications.topic)
+    : undefined;
+  const tools = allowlist(
+    [
+      pullConfig(admin),
+      previewService(services),
+      recreateService(services),
+      startContainer(host),
+      // Offered only when configured, as an optional Source's Tool is.
+      ...(admin.proxy ? [reloadProxy(host, admin.proxy)] : []),
+    ],
+    notifier ? { notifier } : {},
   );
+  const server = await startServer({ token: admin.token, port }, tools);
+  const startUp = adminStartUp(admin.repoPath, tools, notifier !== undefined);
+  console.log(`homelab-mcp admin mode listening on port ${port}. ${startUp}`);
   return server;
 }
 

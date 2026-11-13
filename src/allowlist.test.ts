@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { type Action, adminStartUp, allowlist } from "./allowlist.ts";
 import { Refusal } from "./refusal.ts";
+import { type Notification, type Notifier, ntfy } from "./sources/ntfy.ts";
+import { fakeFetch } from "./testing/fake-fetch.ts";
 
 /** An Action that runs until the test lets it finish. */
 function heldAction(name: string) {
@@ -95,19 +97,109 @@ describe("allowlist", () => {
   });
 });
 
+describe("allowlist with Notifications on", () => {
+  /** A notifier that records what it was asked to send, or fails as an unreachable ntfy would. */
+  function recordingNotifier(fails = false) {
+    const sent: Notification[] = [];
+    const notifier: Notifier = {
+      async send(notification) {
+        if (fails) throw new Error("ntfy unreachable");
+        sent.push(notification);
+      },
+    };
+    return { notifier, sent };
+  }
+
+  it("sends one Notification when an Action works, naming it and what it was asked", async () => {
+    const { notifier, sent } = recordingNotifier();
+    const start = heldAction("start_container");
+    const [tool] = allowlist([start.action], { notifier });
+    const call = tool?.handler({ name: "vpn-client" });
+    start.finish("Started vpn-client. It was exited.");
+    await call;
+    expect(sent).toEqual([
+      {
+        title: "start_container done",
+        message: 'Asked: {"name":"vpn-client"}\nStarted vpn-client. It was exited.',
+        failed: false,
+      },
+    ]);
+  });
+
+  it("sends one Notification when an Action fails, with its reason, redacted", async () => {
+    const { notifier, sent } = recordingNotifier();
+    const pull = heldAction("pull_config");
+    const [tool] = allowlist([pull.action], { notifier });
+    const call = tool?.handler({});
+    pull.finish(new Refusal("Git said TOKEN=abc123secret"));
+    await expect(call).rejects.toThrow();
+    expect(sent).toEqual([
+      {
+        title: "pull_config failed",
+        message: "Asked: {}\nGit said TOKEN=[redacted]",
+        failed: true,
+      },
+    ]);
+  });
+
+  it("still answers the Client when the Notification can't be sent, and logs that it wasn't", async () => {
+    const logged = vi.spyOn(console, "log").mockImplementation(() => {});
+    const { notifier } = recordingNotifier(true);
+    const start = heldAction("start_container");
+    const [tool] = allowlist([start.action], { notifier });
+    const call = tool?.handler({});
+    start.finish("Started.");
+    await expect(call).resolves.toBe("Started.");
+    expect(logged).toHaveBeenCalledWith(
+      "start_container's Notification couldn't be sent: ntfy unreachable",
+    );
+    logged.mockRestore();
+  });
+
+  it("never logs the ntfy topic when ntfy refuses a Notification", async () => {
+    const logged = vi.spyOn(console, "log").mockImplementation(() => {});
+    const topic = "test-topic-0123456789";
+    const { fetch } = fakeFetch({ [`https://push.example/${topic}`]: { status: 500, body: "" } });
+    const start = heldAction("start_container");
+    const [tool] = allowlist([start.action], {
+      notifier: ntfy(fetch, "https://push.example", topic),
+    });
+    const call = tool?.handler({});
+    start.finish("Started.");
+    await call;
+    expect(logged).toHaveBeenCalledWith(
+      "start_container's Notification couldn't be sent: ntfy answered with HTTP 500.",
+    );
+    expect(logged.mock.calls.flat().join(" ")).not.toContain(topic);
+    logged.mockRestore();
+  });
+
+  it("sends the Notification when a timed-out Action really finishes", async () => {
+    const { notifier, sent } = recordingNotifier();
+    const start = heldAction("start_container");
+    const [tool] = allowlist([{ ...start.action, timeLimitSeconds: 0.05 }], { notifier });
+    await expect(tool?.handler({})).rejects.toThrow(/didn't finish within/);
+    expect(sent).toEqual([]);
+    start.finish("Started late.");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(sent.map((n) => n.title)).toEqual(["start_container done"]);
+  });
+});
+
 describe("adminStartUp", () => {
   it("names the Allowlist, the config repo and whether Notifications are on", () => {
     const tools = allowlist([
       heldAction("pull_config").action,
       heldAction("start_container").action,
     ]);
-    const line = adminStartUp("/host/stacks", tools);
+    const line = adminStartUp("/host/stacks", tools, false);
     expect(line).toBe(
       "Allowlist: pull_config, start_container. Config repo: /host/stacks. Notifications: off.",
     );
+    expect(adminStartUp("/host/stacks", tools, true)).toMatch(/Notifications: on.$/);
   });
 
   it("says so when the Allowlist is empty", () => {
-    expect(adminStartUp("/host/stacks", [])).toMatch(/^Allowlist: none\./);
+    expect(adminStartUp("/host/stacks", [], false)).toMatch(/^Allowlist: none\./);
   });
 });
