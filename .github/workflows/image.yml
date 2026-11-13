@@ -33,6 +33,38 @@ jobs:
           test "$status" = healthy
           # The MCP route is there and refuses a request without the Token.
           test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8765/mcp)" = 401
+      - name: Has admin mode's tools
+        run: |
+          docker run --rm --entrypoint sh homelab-mcp:test -c \
+            'docker --version && docker compose version && git --version && ssh -V'
+      - name: Starts in admin mode as a non-root user with the real socket, and reaches Docker through it
+        run: |
+          mkdir -p "$RUNNER_TEMP/stacks/ops" "$RUNNER_TEMP/secrets"
+          printf 'services:\n  homelab-mcp-admin:\n    image: homelab-mcp:test\n' > "$RUNNER_TEMP/stacks/ops/compose.yaml"
+          touch "$RUNNER_TEMP/secrets/deploy-key" "$RUNNER_TEMP/secrets/known-hosts"
+          docker run -d --name admin --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges \
+            --group-add "$(stat -c %g /var/run/docker.sock)" \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$RUNNER_TEMP/stacks:$RUNNER_TEMP/stacks" -v "$RUNNER_TEMP/secrets:/run/secrets:ro" \
+            -p 8766:8765 \
+            -e MCP_TOKEN=smoke-test-token-0123456789-0123456789 \
+            -e ADMIN_TOKEN=smoke-admin-token-0123456789-0123456789 \
+            -e ADMIN_REPO_PATH="$RUNNER_TEMP/stacks" -e ADMIN_COMPOSE_FILES=ops/compose.yaml \
+            -e ADMIN_SERVICE=homelab-mcp-admin \
+            -e ADMIN_DEPLOY_KEY_FILE=/run/secrets/deploy-key -e ADMIN_KNOWN_HOSTS_FILE=/run/secrets/known-hosts \
+            homelab-mcp:test
+          test "$(docker exec admin id -u)" != "0"
+          for _ in $(seq 1 30); do
+            status=$(docker inspect -f '{{.State.Health.Status}}' admin)
+            [ "$status" = healthy ] && break
+            sleep 2
+          done
+          docker logs admin
+          test "$status" = healthy
+          docker logs admin | grep -q "Allowlist: pull_config, preview_service, recreate_service, start_container."
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8766/mcp)" = 401
+          # Compose, as the unprivileged user, through the real socket.
+          docker exec admin docker compose -f "$RUNNER_TEMP/stacks/ops/compose.yaml" config --hash homelab-mcp-admin
 
   publish:
     if: startsWith(github.ref, 'refs/tags/v')

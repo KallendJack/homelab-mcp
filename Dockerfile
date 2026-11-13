@@ -12,6 +12,8 @@ ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./
 COPY src ./src
+# Admin mode runs Compose, Git and ssh (phase 2); the read-only server never starts them.
+RUN apk add --no-cache docker-cli docker-cli-compose git openssh-client
 # The image's own unprivileged user. The server writes nothing, so it also runs with a read-only root filesystem.
 USER node
 EXPOSE 8765
