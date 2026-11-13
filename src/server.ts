@@ -4,6 +4,7 @@ import type { AddressInfo } from "node:net";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
+import { ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import packageJson from "../package.json" with { type: "json" };
 import type { Config } from "./config.ts";
 import { redact } from "./redaction.ts";
@@ -83,12 +84,27 @@ function reply(text: string, options: { isError?: true } = {}) {
   return { content: [{ type: "text" as const, text: redact(text) }], ...options };
 }
 
+/** An Action carries the hints a Client reads to decide whether to ask the person first; a read Tool carries none. */
+function annotations(tool: Tool) {
+  return tool.changesHost ? { annotations: { readOnlyHint: false, destructiveHint: true } } : {};
+}
+
+/** An error's message and stack, redacted, since a failed command's error can quote its environment. */
+function crashDetails(error: unknown): string {
+  return redact(error instanceof Error ? (error.stack ?? String(error)) : String(error));
+}
+
 function mcpServer(tools: Tool[]): McpServer {
   const mcp = new McpServer({ name: "homelab-mcp", version: packageJson.version });
+  if (tools.length === 0) {
+    // The SDK answers tools/list only once a Tool is registered; admin mode with no Actions still answers it.
+    mcp.server.registerCapabilities({ tools: {} });
+    mcp.server.setRequestHandler(ListToolsRequestSchema, () => ({ tools: [] }));
+  }
   for (const tool of tools) {
     mcp.registerTool(
       tool.name,
-      { description: tool.description, inputSchema: tool.inputSchema },
+      { description: tool.description, inputSchema: tool.inputSchema, ...annotations(tool) },
       async (args) => {
         const started = performance.now();
         const took = () => `${Math.round(performance.now() - started)} ms`;
@@ -97,7 +113,10 @@ function mcpServer(tools: Tool[]): McpServer {
           : tool.name;
         try {
           const text = await tool.handler(args);
-          console.log(`${call} ok in ${took()}`);
+          // An Action's answer is the record of what it did, kept on one log line. A read Tool's is too
+          // long, and too private, to log.
+          const result = tool.changesHost ? `: ${redact(text).split("\n").join(" / ")}` : "";
+          console.log(`${call} ok in ${took()}${result}`);
           return reply(text);
         } catch (error) {
           // A Source failing or a Tool refusing has a sentence written for the Client.
@@ -106,7 +125,7 @@ function mcpServer(tools: Tool[]): McpServer {
             return reply(error.message, { isError: true });
           }
           // Anything else is a bug: its details stay in the server log.
-          console.error(`${call} crashed after ${took()}`, error);
+          console.error(`${call} crashed after ${took()}: ${crashDetails(error)}`);
           return reply(`${tool.name} failed unexpectedly; the server log has the details.`, {
             isError: true,
           });

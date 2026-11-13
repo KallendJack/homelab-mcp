@@ -75,6 +75,15 @@ _Avoid_: command, mutation, write tool
 The fixed set of Actions the server will perform. Anything else is refused, whatever the Client asks.
 _Avoid_: whitelist, permissions
 
+**Admin mode**:
+The server started with its own Token, offering only the Allowlist and never a read Tool. It runs in a second
+container, separate from the read-only one.
+_Avoid_: write mode, privileged mode
+
+**Config repo**:
+The Git repository holding the Host's Compose files and the config they mount, which Actions deploy from.
+_Avoid_: stacks repo, homelab repo, deployment repo
+
 **Service**:
 One entry in a Compose file, which runs as one Container. Actions work on Services.
 _Avoid_: app, container (for the definition)

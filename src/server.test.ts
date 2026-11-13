@@ -5,6 +5,8 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { z } from "zod";
+import { type Action, allowlist } from "./allowlist.ts";
 import { Refusal } from "./refusal.ts";
 import { type RunningServer, startServer } from "./server.ts";
 import { disk } from "./sources/disk.ts";
@@ -66,6 +68,16 @@ function toolThatThrows(error: Error): Tool {
     handler: async () => {
       throw error;
     },
+  };
+}
+
+/** A stand-in for a real Action, which takes a Container name. */
+function fakeAction(handler: () => Promise<string>): Action {
+  return {
+    name: "start_container",
+    description: "Starts a stopped Container.",
+    inputSchema: { name: z.string(), note: z.string().optional() },
+    handler,
   };
 }
 
@@ -182,9 +194,10 @@ describe("the Server", () => {
     expect(result.content).toEqual([{ type: "text", text: refusal.message }]);
   });
 
-  it("hides the details of an unexpected error from the Client and logs them", async () => {
+  it("hides the details of an unexpected error from the Client and logs them, redacted", async () => {
     const logged = vi.spyOn(console, "error").mockImplementation(() => {});
-    const { url } = await start([toolThatThrows(new Error("secret internal detail"))]);
+    const crash = new Error("internal detail from a command run with TOKEN=abc123secret");
+    const { url } = await start([toolThatThrows(crash)]);
     const client = await connect(url);
 
     const result = await client.callTool({ name: "broken_tool", arguments: {} });
@@ -193,9 +206,19 @@ describe("the Server", () => {
       { type: "text", text: "broken_tool failed unexpectedly; the server log has the details." },
     ]);
     expect(logged).toHaveBeenCalledWith(
-      expect.stringMatching(/^broken_tool crashed after \d+ ms$/),
-      expect.objectContaining({ message: "secret internal detail" }),
+      expect.stringMatching(
+        /^broken_tool crashed after \d+ ms: Error: internal detail from a command run with TOKEN=\[redacted\]\n\s+at /,
+      ),
     );
+    expect(String(logged.mock.calls[0])).not.toContain("abc123secret");
+  });
+
+  it("offers read Tools with no hints, exactly as before admin mode existed", async () => {
+    const { url } = await start(realTools());
+    const client = await connect(url);
+
+    const [tool] = (await client.listTools()).tools;
+    expect(tool?.annotations).toBeUndefined();
   });
 
   it("keeps serving the other Tools after one fails", async () => {
@@ -226,6 +249,60 @@ describe("the Server", () => {
     await client.callTool({ name: "container_logs", arguments: { name: "sync-worker", lines: 5 } });
     expect(logged).toHaveBeenCalledWith(
       expect.stringMatching(/^container_logs sync-worker ok in \d+ ms$/),
+    );
+  });
+
+  it("answers an empty Tool list when admin mode has no Actions yet", async () => {
+    const { url } = await start(allowlist([]));
+    const client = await connect(url);
+
+    expect((await client.listTools()).tools).toEqual([]);
+  });
+
+  it("tells the Client that an Action changes the Host, so it asks the person first", async () => {
+    const { url } = await start(allowlist([fakeAction(async () => "started")]));
+    const client = await connect(url);
+
+    const [tool] = (await client.listTools()).tools;
+    expect(tool?.annotations).toMatchObject({ readOnlyHint: false, destructiveHint: true });
+  });
+
+  it("logs each Action with its name, arguments, how long it took and its result, redacted", async () => {
+    const logged = vi.spyOn(console, "log").mockImplementation(() => {});
+    const action = fakeAction(async () => "Started vpn-client.\nIt is running.");
+    const { url } = await start(allowlist([action]));
+    const client = await connect(url);
+
+    await client.callTool({
+      name: "start_container",
+      arguments: { name: "vpn-client", note: "API_KEY=hunter2" },
+    });
+    expect(logged).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^start_container \{"name":"vpn-client","note":"API_KEY=\[redacted\]"\} ok in \d+ ms: Started vpn-client\. \/ It is running\.$/,
+      ),
+    );
+  });
+
+  it("logs and redacts a failed Action's error", async () => {
+    const logged = vi.spyOn(console, "log").mockImplementation(() => {});
+    const action = fakeAction(async () => {
+      throw new Refusal("vpn-client won't start: TOKEN=abc123secret");
+    });
+    const { url } = await start(allowlist([action]));
+    const client = await connect(url);
+
+    const result = await client.callTool({
+      name: "start_container",
+      arguments: { name: "vpn-client" },
+    });
+    expect(result.content).toEqual([
+      { type: "text", text: "vpn-client won't start: TOKEN=[redacted]" },
+    ]);
+    expect(logged).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^start_container \{"name":"vpn-client"\} failed in \d+ ms: vpn-client won't start: TOKEN=\[redacted\]$/,
+      ),
     );
   });
 

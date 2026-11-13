@@ -105,3 +105,13 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   Review caught the README promising that any empty setting counts as unset when three of them stopped the server;
   the code now drops empty values before parsing, which also removed a helper. Known gap: the arm64 image is built
   but only the amd64 one is smoke-tested.
+- **2026-11-13**: Ticket 10 (#22), Admin mode and the Allowlist, the start of phase 2. `ADMIN_TOKEN` turns admin mode
+  on, the same pattern as an optional Source; it needs the config repo's path, its Compose files and the server's own
+  Service, and refuses the read-only Token as its own. In admin mode `main.ts` starts the same Server with only the
+  Allowlist, which is empty for now; the SDK only answers `tools/list` once a Tool exists, so the Server answers it
+  itself for an empty list. The Allowlist module holds the one-at-a-time lock, shared by every request, and is tested
+  with fake Actions held open until the test lets them finish. Each Action is marked with `destructiveHint`, so a
+  Client asks the person first, and logged with all its arguments and its answer. Review caught: a crash's error went
+  to the log unredacted (now redacted for every Tool, since a failed command's error can quote its environment); only
+  an Action's first line was logged, when the spec asks for its result; read Tools gained an empty hints object; test
+  paths that looked like a real Host; and "admin mode" and "config repo" missing from the glossary.

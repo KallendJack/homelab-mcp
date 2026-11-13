@@ -21,9 +21,11 @@ route.
 | **Disk**     | Space used and free for each configured path.                                                                                                                                                                                               | `disk(paths) → { usage() }`                                          |
 | **Tools**    | Builds the Tool list from the Sources that are on: each Tool's name, description, input schema and handler, which formats the answer as plain text for the Client. Refuses logs for a Private container and names it as the reason.     | `buildTools(sources, { privateContainers }) → Tool[]`                 |
 | **Redaction**| Replaces anything that looks like a Secret with `[redacted]`. Pure code.                                                                                                                                                                    | `redact(text) → text`                                                |
+| **Allowlist** | Turns Actions into the Tools admin mode offers: each is marked as changing the Host, logs all its arguments and its answer, and refuses to start while another Action runs, naming it. Also the admin start-up line. | `allowlist(actions) → Tool[]`, `adminStartUp(repoPath, tools) → text` |
 | **Server**   | The HTTP side: checks the Token on every request, serves MCP over Streamable HTTP, runs every Tool's output through Redaction, and logs each call. Also a `/healthz` route with no Token, for uptime checks.                                | `startServer(config, tools) → { url, close() }`                      |
 
-`main.ts` wires them: load Config, build the Sources that are on, build the Tools, start the Server.
+`main.ts` wires them: load Config, build the Sources that are on, build the Tools, start the Server. With `ADMIN_TOKEN`
+set it starts admin mode instead: the Allowlist alone, behind the admin Token.
 
 Small shared helpers sit beside the modules: `sources/http.ts` (`httpRequests`: every HTTP Source's requests, with the
 time limit and plain-sentence failures), `sources/time-limit.ts` (`withinTimeLimit`, for work that can't be cancelled),
@@ -88,6 +90,10 @@ Percent used is counted as df counts it: used out of used plus what an ordinary 
 | `JELLYFIN_URL`, `JELLYFIN_API_KEY` | No, both or neither    | Turn on Jellyfin                                                         |
 | `REPORT_PATH`                   | No, turns on Report       | The Report file, mounted read-only                                       |
 | `REPORT_MAX_AGE_HOURS`          | No, default `26`          | Whole hours; older than this is a Stale report. Only with `REPORT_PATH`  |
+| `ADMIN_TOKEN` | No, turns on admin mode; 32+ characters, not `MCP_TOKEN` | The Token for admin mode. The server then offers only the Allowlist, and no read Tool |
+| `ADMIN_REPO_PATH` | In admin mode | The config repo's absolute path, the same inside the container as on the Host |
+| `ADMIN_COMPOSE_FILES` | In admin mode | Comma-separated `.yaml` or `.yml` paths inside the config repo, such as `proxy/compose.yaml` |
+| `ADMIN_SERVICE` | In admin mode | The admin server's own Service, which it never recreates |
 
 ## Test seams
 
@@ -110,3 +116,9 @@ power to change anything. Behaviour and tickets: [`spec-phase-2.md`](spec-phase-
 
 Compose resolves bind-mount paths on the Host, so the admin container mounts the config repo at the same path it has
 on the Host, and runs the Compose CLI against the real socket.
+
+Admin mode is on when `ADMIN_TOKEN` is set, the same pattern as an optional Source. It still needs `MCP_TOKEN`, so
+config can refuse the same value for both: one Token would let any read-only Client perform Actions. The admin server
+uses the same Server module; an Action is a Tool with `changesHost` set, which makes the Server mark it with
+`destructiveHint` (so the Client asks the person first) and log its whole answer on one line. The one-at-a-time lock lives
+in the Allowlist, shared by every request, since the Server builds a fresh MCP server per request.

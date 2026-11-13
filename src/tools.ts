@@ -19,6 +19,8 @@ export type Tool = {
   handler(args: Record<string, unknown>): Promise<string>;
   /** What the server log may show about a call's arguments. Left out, it shows none. */
   logArguments?(args: Record<string, unknown>): string;
+  /** An Action: the Client is told it changes the Host, and the log records its answer. */
+  changesHost?: true;
 };
 
 export type Sources = {

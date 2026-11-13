@@ -175,6 +175,88 @@ describe("loadConfig", () => {
   });
 });
 
+describe("loadConfig in admin mode", () => {
+  const adminToken = "a".repeat(32);
+  const admin = {
+    MCP_TOKEN: token,
+    ADMIN_TOKEN: adminToken,
+    ADMIN_REPO_PATH: "/host/stacks",
+    ADMIN_COMPOSE_FILES: "proxy/compose.yaml, media/compose.yml",
+    ADMIN_SERVICE: "homelab-mcp-admin",
+  };
+
+  it("stays in read-only mode without ADMIN_TOKEN", () => {
+    expect(loadConfig({ MCP_TOKEN: token }).admin).toBeUndefined();
+    expect(loadConfig({ MCP_TOKEN: token, ADMIN_TOKEN: "" }).admin).toBeUndefined();
+  });
+
+  it("turns admin mode on with ADMIN_TOKEN and the config repo's details", () => {
+    expect(loadConfig(admin).admin).toEqual({
+      token: adminToken,
+      repoPath: "/host/stacks",
+      composeFiles: ["proxy/compose.yaml", "media/compose.yml"],
+      service: "homelab-mcp-admin",
+    });
+  });
+
+  it("refuses a short admin Token, naming the variable but never its value", () => {
+    const short = "short-admin-secret";
+    const error = catchError(() => loadConfig({ ...admin, ADMIN_TOKEN: short }));
+    expect(error.message).toBe("ADMIN_TOKEN must be at least 32 characters");
+  });
+
+  it("refuses the read-only Token as the admin Token, without echoing either", () => {
+    const error = catchError(() => loadConfig({ ...admin, ADMIN_TOKEN: token }));
+    expect(error.message).toBe("ADMIN_TOKEN must be different from MCP_TOKEN");
+    expect(error.message).not.toContain(token);
+  });
+
+  it.each(["ADMIN_REPO_PATH", "ADMIN_COMPOSE_FILES", "ADMIN_SERVICE"])(
+    "refuses admin mode without %s",
+    (name) => {
+      const error = catchError(() => loadConfig({ ...admin, [name]: undefined }));
+      expect(error.message).toBe(`${name} is required in admin mode`);
+    },
+  );
+
+  it("refuses an ADMIN_REPO_PATH that isn't absolute, without echoing it", () => {
+    const error = catchError(() => loadConfig({ ...admin, ADMIN_REPO_PATH: "volume1/stacks" }));
+    expect(error.message).toBe("ADMIN_REPO_PATH must be an absolute path");
+  });
+
+  it.each([
+    "/host/stacks/proxy/compose.yaml",
+    "../other/compose.yaml",
+    "proxy/../../compose.yaml",
+    "proxy/README.md",
+    "proxy/composeyaml",
+    "proxy/compose.yaml,proxy/compose.yaml",
+    " , ",
+  ])("refuses ADMIN_COMPOSE_FILES=%s, naming the variable but never its value", (value) => {
+    const error = catchError(() => loadConfig({ ...admin, ADMIN_COMPOSE_FILES: value }));
+    expect(error.message).toBe(
+      "ADMIN_COMPOSE_FILES must be different .yaml or .yml paths inside the config repo, separated by commas, such as proxy/compose.yaml",
+    );
+  });
+
+  it.each(["-admin", "homelab mcp", "admin;rm"])(
+    "refuses an ADMIN_SERVICE name Compose couldn't have (%s)",
+    (name) => {
+      const error = catchError(() => loadConfig({ ...admin, ADMIN_SERVICE: name }));
+      expect(error.message).toBe("ADMIN_SERVICE must be a Service name, such as homelab-mcp-admin");
+    },
+  );
+
+  it("refuses admin settings without ADMIN_TOKEN, rather than ignoring them", () => {
+    const error = catchError(() =>
+      loadConfig({ MCP_TOKEN: token, ADMIN_REPO_PATH: "/host/stacks" }),
+    );
+    expect(error.message).toBe(
+      "ADMIN_REPO_PATH, ADMIN_COMPOSE_FILES and ADMIN_SERVICE only apply with ADMIN_TOKEN set",
+    );
+  });
+});
+
 function catchError(run: () => unknown): Error {
   try {
     run();
