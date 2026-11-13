@@ -181,6 +181,8 @@ describe("loadConfig in admin mode", () => {
     MCP_TOKEN: token,
     ADMIN_TOKEN: adminToken,
     ADMIN_REPO_PATH: "/host/stacks",
+    ADMIN_DEPLOY_KEY_FILE: "/run/secrets/deploy-key",
+    ADMIN_KNOWN_HOSTS_FILE: "/run/secrets/known-hosts",
     ADMIN_COMPOSE_FILES: "proxy/compose.yaml, media/compose.yml",
     ADMIN_SERVICE: "homelab-mcp-admin",
   };
@@ -197,6 +199,8 @@ describe("loadConfig in admin mode", () => {
       composeFiles: ["proxy/compose.yaml", "media/compose.yml"],
       service: "homelab-mcp-admin",
       dockerSocket: "/var/run/docker.sock",
+      keyFile: "/run/secrets/deploy-key",
+      knownHostsFile: "/run/secrets/known-hosts",
     });
   });
 
@@ -222,13 +226,16 @@ describe("loadConfig in admin mode", () => {
     expect(error.message).not.toContain(token);
   });
 
-  it.each(["ADMIN_REPO_PATH", "ADMIN_COMPOSE_FILES", "ADMIN_SERVICE"])(
-    "refuses admin mode without %s",
-    (name) => {
-      const error = catchError(() => loadConfig({ ...admin, [name]: undefined }));
-      expect(error.message).toBe(`${name} is required in admin mode`);
-    },
-  );
+  it.each([
+    "ADMIN_REPO_PATH",
+    "ADMIN_COMPOSE_FILES",
+    "ADMIN_SERVICE",
+    "ADMIN_DEPLOY_KEY_FILE",
+    "ADMIN_KNOWN_HOSTS_FILE",
+  ])("refuses admin mode without %s", (name) => {
+    const error = catchError(() => loadConfig({ ...admin, [name]: undefined }));
+    expect(error.message).toBe(`${name} is required in admin mode`);
+  });
 
   it("refuses an ADMIN_REPO_PATH that isn't absolute, without echoing it", () => {
     const error = catchError(() => loadConfig({ ...admin, ADMIN_REPO_PATH: "volume1/stacks" }));
@@ -263,7 +270,7 @@ describe("loadConfig in admin mode", () => {
       loadConfig({ MCP_TOKEN: token, ADMIN_REPO_PATH: "/host/stacks" }),
     );
     expect(error.message).toBe(
-      "ADMIN_REPO_PATH, ADMIN_COMPOSE_FILES, ADMIN_SERVICE and ADMIN_DOCKER_SOCKET only apply with ADMIN_TOKEN set",
+      "ADMIN_REPO_PATH, ADMIN_COMPOSE_FILES, ADMIN_SERVICE, ADMIN_DEPLOY_KEY_FILE, ADMIN_KNOWN_HOSTS_FILE and ADMIN_DOCKER_SOCKET only apply with ADMIN_TOKEN set",
     );
   });
 });
