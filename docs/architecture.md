@@ -30,7 +30,7 @@ set it starts admin mode instead: the Allowlist alone, behind the admin Token.
 Small shared helpers sit beside the modules: `sources/http.ts` (`httpRequests`: every HTTP Source's requests, with the
 time limit and plain-sentence failures), `sources/time-limit.ts` (`withinTimeLimit`, for work that can't be cancelled),
 `sources/source-error.ts` (`SourceError` and `safeErrorCode`), `refusal.ts`, `bytes.ts` (`humanBytes`),
-`sources/socket-fetch.ts` (`socketFetch`: a `fetch` over a local socket, so admin mode reaches Docker's own socket), `start-container.ts` (the `start_container` Action), `pull-config.ts` (the `pull_config` Action: Git with the deploy key, fast-forward only) and `changed-services.ts` (which Services a set of changed files affects, read from the Compose text), `closest-names.ts`, `wording.ts` (`count`, `section`) and `recent-media.ts` (`recent_media`'s input and wording).
+`sources/socket-fetch.ts` (`socketFetch`: a `fetch` over a local socket, so admin mode reaches Docker's own socket), `start-container.ts` (the `start_container` Action), `recreate-service.ts` (`preview_service` and `recreate_service`), `service-plan.ts` (which Compose file a Service is in, what a recreate would change and whom it would disturb), `sources/compose.ts` (runs `docker compose` against one file through Docker's socket, keeping only the plan's fields of the resolved model, since the rest holds Secrets), `pull-config.ts` (the `pull_config` Action: Git with the deploy key, fast-forward only) and `changed-services.ts` (which Services a set of changed files affects, read from the Compose text), `closest-names.ts`, `wording.ts` (`count`, `section`) and `recent-media.ts` (`recent_media`'s input and wording).
 
 ## Tools (phase 1)
 

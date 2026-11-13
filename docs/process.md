@@ -138,3 +138,13 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   refused for a person to check. Codex built the first version; tidying it for a reader found that strict host-key
   checking had nothing to check against in a container, so `ADMIN_KNOWN_HOSTS_FILE` is now required. The image still
   needs `git` and `ssh`, which ticket 15 adds; tests use temporary repos with a local remote, so no SSH runs.
+- **2026-11-14**: Ticket 13 (#25), `preview_service` and `recreate_service`. They run the Compose CLI (`docker compose
+  -f <file>`) through Docker's socket. Nothing here could record Compose's real dry-run output (no Docker on the
+  development PC, and only the admin container will have the socket), and its wording isn't a stable interface, so
+  nothing parses it: what a recreate changes comes from `config --hash` against the `com.docker.compose.config-hash`
+  label on each Container, and the guard against touching others comes from the resolved model (Services sharing
+  its network or restarting with it). The dry run is still shown to the person. `up -d --no-deps --wait` recreates
+  only that Service and waits for it; the recreate's limit is five minutes. The resolved model holds every Service's
+  environment, so only `network_mode` and `depends_on` are kept from it. Tests run a fake `docker compose` as a real
+  process from a scenario file, chosen by the command in settings rather than a new code seam. Writing it caught
+  Compose's warnings on stderr breaking the JSON model, so stdout and stderr stay apart.
