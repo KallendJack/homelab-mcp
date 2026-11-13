@@ -4,6 +4,7 @@ import type { AddressInfo } from "node:net";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
+import { ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import packageJson from "../package.json" with { type: "json" };
 import type { Config } from "./config.ts";
 import { redact } from "./redaction.ts";
@@ -83,12 +84,26 @@ function reply(text: string, options: { isError?: true } = {}) {
   return { content: [{ type: "text" as const, text: redact(text) }], ...options };
 }
 
+/** The hints a Client reads to decide whether to ask the person before a call. */
+function annotations(tool: Tool) {
+  return tool.changesHost ? { readOnlyHint: false, destructiveHint: true } : {};
+}
+
 function mcpServer(tools: Tool[]): McpServer {
   const mcp = new McpServer({ name: "homelab-mcp", version: packageJson.version });
+  if (tools.length === 0) {
+    // The SDK answers tools/list only once a Tool is registered; admin mode with no Actions still answers it.
+    mcp.server.registerCapabilities({ tools: {} });
+    mcp.server.setRequestHandler(ListToolsRequestSchema, () => ({ tools: [] }));
+  }
   for (const tool of tools) {
     mcp.registerTool(
       tool.name,
-      { description: tool.description, inputSchema: tool.inputSchema },
+      {
+        description: tool.description,
+        inputSchema: tool.inputSchema,
+        annotations: annotations(tool),
+      },
       async (args) => {
         const started = performance.now();
         const took = () => `${Math.round(performance.now() - started)} ms`;
@@ -97,7 +112,9 @@ function mcpServer(tools: Tool[]): McpServer {
           : tool.name;
         try {
           const text = await tool.handler(args);
-          console.log(`${call} ok in ${took()}`);
+          // An Action's first line says what it did. A read Tool's answer is too long, and too private, to log.
+          const result = tool.changesHost ? `: ${redact(text.split("\n")[0] ?? "")}` : "";
+          console.log(`${call} ok in ${took()}${result}`);
           return reply(text);
         } catch (error) {
           // A Source failing or a Tool refusing has a sentence written for the Client.
