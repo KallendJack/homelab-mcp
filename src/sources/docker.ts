@@ -20,10 +20,25 @@ export type Docker = {
 /** How a request to start a Container ended. Anything else Docker says is a SourceError carrying its message. */
 export type StartResult = "started" | "already running" | "no such container";
 
+/** One Container of a Compose Service, with the config hash Compose stamped on it, if it did. */
+export type ServiceContainer = Container & { configHash: string | undefined };
+
 /** Docker as admin mode sees it, through the real socket: the Container list, and starting one. */
 export type DockerAdmin = Pick<Docker, "containers"> & {
   start(name: string): Promise<StartResult>;
+  /** The Containers Compose made for one Service of one project, found by the labels it puts on them. */
+  serviceContainers(project: string, service: string): Promise<ServiceContainer[]>;
 };
+
+const CONFIG_HASH_LABEL = "com.docker.compose.config-hash";
+
+/** The address that lists one Compose Service's Containers, using Docker's label filter. */
+export function serviceContainersUrl(url: string, project: string, service: string): string {
+  const filters = JSON.stringify({
+    label: [`com.docker.compose.project=${project}`, `com.docker.compose.service=${service}`],
+  });
+  return `${url}/containers/json?all=true&filters=${encodeURIComponent(filters)}`;
+}
 
 /** Docker's rule for Container names. Nothing else can be one, so anything else can be refused early. */
 export const CONTAINER_NAME = /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$/;
@@ -68,13 +83,35 @@ export function docker(fetch: typeof globalThis.fetch, url: string): Docker {
 
 const errorMessage = z.object({ message: z.string() });
 
+const labelledContainerList = z.array(
+  z.object({
+    Names: z.array(z.string()).min(1),
+    State: z.string(),
+    Status: z.string(),
+    Image: z.string(),
+    Labels: z.record(z.string(), z.string()).nullish(),
+  }),
+);
+
 /** Docker through the real socket, for admin mode only. `fetch` reaches the socket (`socketFetch`). */
 export function dockerAdmin(fetch: typeof globalThis.fetch, url: string): DockerAdmin {
-  const { post } = httpRequests(fetch, url, "Docker");
+  const { post, getJson } = httpRequests(fetch, url, "Docker");
   const reader = docker(fetch, url);
 
   return {
     containers: () => reader.containers(),
+
+    async serviceContainers(project, service) {
+      const path = serviceContainersUrl("", project, service);
+      const list = await getJson(path, labelledContainerList);
+      return list.map((c) => ({
+        name: (c.Names[0] ?? "").replace(/^\//, ""),
+        state: c.State,
+        status: c.Status,
+        image: c.Image,
+        configHash: c.Labels?.[CONFIG_HASH_LABEL],
+      }));
+    },
 
     async start(name) {
       const { status, text } = await post(`/containers/${encodeURIComponent(name)}/start`);
