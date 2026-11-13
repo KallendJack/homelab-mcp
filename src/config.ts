@@ -31,6 +31,10 @@ export type AdminConfig = {
   service: string;
   /** Docker's own socket, which admin mode needs to change Containers (ADR 0002 keeps it out of read-only mode). */
   dockerSocket: string;
+  /** Path to the read-only deploy key Secret file, never its contents. */
+  keyFile: string;
+  /** Path to the Git host's SSH key file, so a pull only talks to the real host. */
+  knownHostsFile: string;
 };
 
 /** A setting that stops the server at start. Its message names variables, never their values. */
@@ -44,7 +48,13 @@ const diskPathsError =
 
 const composeFilesError =
   "ADMIN_COMPOSE_FILES must be different .yaml or .yml paths inside the config repo, separated by commas, such as proxy/compose.yaml";
-const REQUIRED_IN_ADMIN_MODE = ["ADMIN_REPO_PATH", "ADMIN_COMPOSE_FILES", "ADMIN_SERVICE"] as const;
+const REQUIRED_IN_ADMIN_MODE = [
+  "ADMIN_REPO_PATH",
+  "ADMIN_COMPOSE_FILES",
+  "ADMIN_SERVICE",
+  "ADMIN_DEPLOY_KEY_FILE",
+  "ADMIN_KNOWN_HOSTS_FILE",
+] as const;
 const DEFAULT_DOCKER_SOCKET = "/var/run/docker.sock";
 
 /** Compose's rule for Service names, starting with a letter or digit so a name can't pass for a CLI option. */
@@ -159,6 +169,18 @@ const schema = z
         error: "ADMIN_DOCKER_SOCKET must be an absolute path",
       })
       .optional(),
+    ADMIN_DEPLOY_KEY_FILE: z
+      .string()
+      .refine((path) => path.startsWith("/"), {
+        error: "ADMIN_DEPLOY_KEY_FILE must be an absolute path",
+      })
+      .optional(),
+    ADMIN_KNOWN_HOSTS_FILE: z
+      .string()
+      .refine((path) => path.startsWith("/"), {
+        error: "ADMIN_KNOWN_HOSTS_FILE must be an absolute path",
+      })
+      .optional(),
     ADMIN_SERVICE: z
       .string()
       .regex(SERVICE_NAME, {
@@ -183,7 +205,7 @@ const schema = z
         context.addIssue({
           code: "custom",
           message:
-            "ADMIN_REPO_PATH, ADMIN_COMPOSE_FILES, ADMIN_SERVICE and ADMIN_DOCKER_SOCKET only apply with ADMIN_TOKEN set",
+            "ADMIN_REPO_PATH, ADMIN_COMPOSE_FILES, ADMIN_SERVICE, ADMIN_DEPLOY_KEY_FILE, ADMIN_KNOWN_HOSTS_FILE and ADMIN_DOCKER_SOCKET only apply with ADMIN_TOKEN set",
         });
       }
       return;
@@ -230,7 +252,9 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     ...(parsed.ADMIN_TOKEN &&
     parsed.ADMIN_REPO_PATH &&
     parsed.ADMIN_COMPOSE_FILES &&
-    parsed.ADMIN_SERVICE
+    parsed.ADMIN_SERVICE &&
+    parsed.ADMIN_DEPLOY_KEY_FILE &&
+    parsed.ADMIN_KNOWN_HOSTS_FILE
       ? {
           admin: {
             token: parsed.ADMIN_TOKEN,
@@ -238,6 +262,8 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
             composeFiles: parsed.ADMIN_COMPOSE_FILES,
             service: parsed.ADMIN_SERVICE,
             dockerSocket: parsed.ADMIN_DOCKER_SOCKET ?? DEFAULT_DOCKER_SOCKET,
+            keyFile: parsed.ADMIN_DEPLOY_KEY_FILE,
+            knownHostsFile: parsed.ADMIN_KNOWN_HOSTS_FILE,
           },
         }
       : {}),

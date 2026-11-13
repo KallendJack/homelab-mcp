@@ -128,3 +128,13 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   releasing the lock without the partial-change warning. Write requests now stay pending under the
   Allowlist deadline; an offline regression through the Docker Source proves the warning and held lock.
   Standards review found no definite violations; duplicate HTTP handling remains a small follow-up concern.
+- **2026-11-14**: Ticket 12 (#24), `pull_config`. It fast-forwards the config repo to its remote's default branch
+  (asked of the remote, not assumed) and refuses, changing nothing, when the repo has local changes or its history
+  has moved apart. It's checked twice, before fetching and just before moving, and `--no-overwrite-ignore` stops a
+  tracked file replacing an ignored local one such as a `.env`. Git runs with the deploy key by path, no hooks, no
+  prompts and none of the server's own `GIT_*` settings; any Git failure becomes a fixed sentence, since Git's text
+  can name the remote. The changed Services come from reading each Compose file at both commits with the `yaml`
+  package, so a removed or renamed Service is reported too; `include` and `extends`, which pull in other files, are
+  refused for a person to check. Codex built the first version; tidying it for a reader found that strict host-key
+  checking had nothing to check against in a container, so `ADMIN_KNOWN_HOSTS_FILE` is now required. The image still
+  needs `git` and `ssh`, which ticket 15 adds; tests use temporary repos with a local remote, so no SSH runs.

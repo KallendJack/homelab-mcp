@@ -6,7 +6,7 @@ How homelab-mcp is put together. The vocabulary is in [CONTEXT.md](../CONTEXT.md
 ## Stack
 
 TypeScript on Node 24, the official MCP TypeScript SDK (`@modelcontextprotocol/sdk`), Zod, Vitest, Biome, GitHub
-Actions. One pnpm package, shipped as a Docker image. No web framework: Node's own `http` server is enough for one
+Actions, and `yaml` for reading Compose files in admin mode. One pnpm package, shipped as a Docker image. No web framework: Node's own `http` server is enough for one
 route.
 
 ## Modules
@@ -30,7 +30,7 @@ set it starts admin mode instead: the Allowlist alone, behind the admin Token.
 Small shared helpers sit beside the modules: `sources/http.ts` (`httpRequests`: every HTTP Source's requests, with the
 time limit and plain-sentence failures), `sources/time-limit.ts` (`withinTimeLimit`, for work that can't be cancelled),
 `sources/source-error.ts` (`SourceError` and `safeErrorCode`), `refusal.ts`, `bytes.ts` (`humanBytes`),
-`sources/socket-fetch.ts` (`socketFetch`: a `fetch` over a local socket, so admin mode reaches Docker's own socket), `start-container.ts` (the `start_container` Action), `closest-names.ts`, `wording.ts` (`count`, `section`) and `recent-media.ts` (`recent_media`'s input and wording).
+`sources/socket-fetch.ts` (`socketFetch`: a `fetch` over a local socket, so admin mode reaches Docker's own socket), `start-container.ts` (the `start_container` Action), `pull-config.ts` (the `pull_config` Action: Git with the deploy key, fast-forward only) and `changed-services.ts` (which Services a set of changed files affects, read from the Compose text), `closest-names.ts`, `wording.ts` (`count`, `section`) and `recent-media.ts` (`recent_media`'s input and wording).
 
 ## Tools (phase 1)
 
