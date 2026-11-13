@@ -148,3 +148,12 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   environment, so only `network_mode` and `depends_on` are kept from it. Tests run a fake `docker compose` as a real
   process from a scenario file, chosen by the command in settings rather than a new code seam. Writing it caught
   Compose's warnings on stderr breaking the JSON model, so stdout and stderr stay apart.
+- **2026-11-14**: Ticket 14 (#26), `reload_proxy` and Notifications. `reload_proxy` runs the proxy's own reload
+  command through Docker's exec API (create, start and read its framed output, then its exit code), with the
+  Container and command fixed by config so it can't become a way to run anything. It's offered only when
+  configured, like an optional Source. Notifications go through ntfy from the Allowlist when each Action really
+  ends, so a timed-out Action still reports how it finished, and before the lock is released. ntfy's request has a
+  time limit, unlike writes to Docker, so a hung ntfy can't hold the lock. The topic is kept out of every answer
+  and log by construction (it is only ever part of ntfy's address, and every ntfy failure is a fixed sentence):
+  Redaction's random-looking-string rule doesn't catch a topic like `homelab-` plus 24 hex characters, and
+  widening it would hide ordinary log text. Exec fixtures are hand-written from the Docker API docs until ticket 16.

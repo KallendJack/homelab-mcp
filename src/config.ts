@@ -35,6 +35,10 @@ export type AdminConfig = {
   keyFile: string;
   /** Path to the Git host's SSH key file, so a pull only talks to the real host. */
   knownHostsFile: string;
+  /** The reverse proxy's Container and reload command. Set, it turns on reload_proxy. */
+  proxy?: { container: string; command: string[] };
+  /** ntfy's address and topic. Set, every Action sends a Notification. The topic is a Secret. */
+  notifications?: { url: string; topic: string };
 };
 
 /** A setting that stops the server at start. Its message names variables, never their values. */
@@ -56,6 +60,13 @@ const REQUIRED_IN_ADMIN_MODE = [
   "ADMIN_KNOWN_HOSTS_FILE",
 ] as const;
 const DEFAULT_DOCKER_SOCKET = "/var/run/docker.sock";
+/** Optional in admin mode, and meaningless outside it. */
+const OPTIONAL_IN_ADMIN_MODE = [
+  "ADMIN_PROXY_CONTAINER",
+  "ADMIN_PROXY_RELOAD_COMMAND",
+  "NTFY_URL",
+  "NTFY_TOPIC",
+] as const;
 
 /** Compose's rule for Service names, starting with a letter or digit so a name can't pass for a CLI option. */
 export const SERVICE_NAME = /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$/;
@@ -181,6 +192,30 @@ const schema = z
         error: "ADMIN_KNOWN_HOSTS_FILE must be an absolute path",
       })
       .optional(),
+    ADMIN_PROXY_CONTAINER: z
+      .string()
+      .regex(CONTAINER_NAME, {
+        error: "ADMIN_PROXY_CONTAINER must be a Container name, such as caddy",
+      })
+      .optional(),
+    ADMIN_PROXY_RELOAD_COMMAND: z
+      .string()
+      .transform((value) => value.split(/\s+/).filter((word) => word !== ""))
+      .refine((words) => words.length > 0, {
+        error:
+          "ADMIN_PROXY_RELOAD_COMMAND must be the proxy's reload command, such as caddy reload",
+      })
+      .optional(),
+    NTFY_URL: z
+      .url({ protocol: /^https?$/, error: "NTFY_URL must be an http:// or https:// address" })
+      .transform((url) => url.replace(/\/+$/, ""))
+      .optional(),
+    NTFY_TOPIC: z
+      .string()
+      .regex(/^[A-Za-z0-9_-]{1,64}$/, {
+        error: "NTFY_TOPIC must be 1 to 64 letters, digits, - or _, such as homelab-alerts-x7k2",
+      })
+      .optional(),
     ADMIN_SERVICE: z
       .string()
       .regex(SERVICE_NAME, {
@@ -195,8 +230,26 @@ const schema = z
   .refine((env) => env.REPORT_MAX_AGE_HOURS === undefined || env.REPORT_PATH !== undefined, {
     error: "REPORT_MAX_AGE_HOURS only applies with REPORT_PATH set",
   })
+  .refine(
+    (env) =>
+      (env.ADMIN_PROXY_CONTAINER === undefined) === (env.ADMIN_PROXY_RELOAD_COMMAND === undefined),
+    {
+      error:
+        "ADMIN_PROXY_CONTAINER and ADMIN_PROXY_RELOAD_COMMAND must be set together, or neither",
+    },
+  )
+  .refine((env) => (env.NTFY_URL === undefined) === (env.NTFY_TOPIC === undefined), {
+    error: "NTFY_URL and NTFY_TOPIC must be set together, or neither",
+  })
   .superRefine((env, context) => {
     if (env.ADMIN_TOKEN === undefined) {
+      if (OPTIONAL_IN_ADMIN_MODE.some((name) => env[name] !== undefined)) {
+        context.addIssue({
+          code: "custom",
+          message:
+            "ADMIN_PROXY_CONTAINER, ADMIN_PROXY_RELOAD_COMMAND, NTFY_URL and NTFY_TOPIC only apply with ADMIN_TOKEN set",
+        });
+      }
       // Admin settings without the Token that turns admin mode on are a mistake, not a choice.
       if (
         REQUIRED_IN_ADMIN_MODE.some((name) => env[name] !== undefined) ||
@@ -264,6 +317,17 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
             dockerSocket: parsed.ADMIN_DOCKER_SOCKET ?? DEFAULT_DOCKER_SOCKET,
             keyFile: parsed.ADMIN_DEPLOY_KEY_FILE,
             knownHostsFile: parsed.ADMIN_KNOWN_HOSTS_FILE,
+            ...(parsed.ADMIN_PROXY_CONTAINER && parsed.ADMIN_PROXY_RELOAD_COMMAND
+              ? {
+                  proxy: {
+                    container: parsed.ADMIN_PROXY_CONTAINER,
+                    command: parsed.ADMIN_PROXY_RELOAD_COMMAND,
+                  },
+                }
+              : {}),
+            ...(parsed.NTFY_URL && parsed.NTFY_TOPIC
+              ? { notifications: { url: parsed.NTFY_URL, topic: parsed.NTFY_TOPIC } }
+              : {}),
           },
         }
       : {}),

@@ -121,6 +121,8 @@ the variable but never its value.
 | `ADMIN_SERVICE` | In admin mode | The admin server's own Service, which it never recreates |
 | `ADMIN_DEPLOY_KEY_FILE` | In admin mode | Absolute path to a read-only deploy key for the config repo, mounted as a Secret file. Only the path is read; Git's ssh reads the key |
 | `ADMIN_KNOWN_HOSTS_FILE` | In admin mode | Absolute path to a known_hosts file holding the Git host's SSH key (for GitHub, from its published keys), so a pull only talks to the real host |
+| `ADMIN_PROXY_CONTAINER`, `ADMIN_PROXY_RELOAD_COMMAND` | No, both or neither; turn on `reload_proxy` | The reverse proxy's Container and its own reload command as words, such as `caddy reload --config /etc/caddy/Caddyfile`. Fixed here, never chosen by the Client |
+| `NTFY_URL`, `NTFY_TOPIC` | No, both or neither, admin mode only | Where every Action's Notification goes. On a public ntfy server the topic is the only Secret: anyone with it can read the messages or send fakes |
 | `ADMIN_DOCKER_SOCKET` | No, default `/var/run/docker.sock` | Docker's own socket, mounted into the admin container only. Never give it to the read-only one (ADR 0002) |
 
 An empty value counts as unset, so `NAME: ${NAME:-}` in a Compose file is fine.
