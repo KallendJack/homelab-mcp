@@ -1,5 +1,6 @@
 import { adminStartUp, allowlist } from "./allowlist.ts";
 import { type AdminConfig, type Config, ConfigError, loadConfig, sourcesOn } from "./config.ts";
+import { pullConfig } from "./pull-config.ts";
 import { type RunningServer, startServer } from "./server.ts";
 import { disk } from "./sources/disk.ts";
 import { docker, dockerAdmin } from "./sources/docker.ts";
@@ -46,7 +47,7 @@ async function startReadOnly(config: Config): Promise<RunningServer> {
 async function startAdmin(admin: AdminConfig, port: number): Promise<RunningServer> {
   // The host in this URL is a placeholder: socketFetch sends every request to Docker's own socket.
   const host = dockerAdmin(socketFetch(admin.dockerSocket), "http://docker");
-  const tools = allowlist([startContainer(host)]);
+  const tools = allowlist([startContainer(host), pullConfig(admin)]);
   const server = await startServer({ token: admin.token, port }, tools);
   console.log(
     `homelab-mcp admin mode listening on port ${port}. ${adminStartUp(admin.repoPath, tools)}`,
