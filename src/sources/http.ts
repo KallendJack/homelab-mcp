@@ -9,7 +9,7 @@ export type HttpRequests = {
   /** The answer to `path` as JSON, checked against `schema`. */
   getJson<T>(path: string, schema: z.ZodType<T>): Promise<T>;
   /**
-   * A body-less POST to `path`, within the time limit. Any status comes back, since for an Action a status such as
+   * A body-less POST to `path`; the Allowlist owns its time limit. Any status comes back, since for an Action a status such as
    * 304 or 404 is an answer to word, not a failure; only not getting an answer is a SourceError.
    */
   post(path: string): Promise<{ status: number; text: string }>;
@@ -71,10 +71,11 @@ export function httpRequests(
   }
 
   async function post(path: string): Promise<{ status: number; text: string }> {
-    const signal = AbortSignal.timeout(TIME_LIMIT_SECONDS * 1000);
+    // Do not abort a write on the read timeout: Docker may still be changing the Host.
+    // The Allowlist reports its deadline while holding the lock until this request settles.
     let response: Response;
     try {
-      response = await fetch(`${baseUrl}${path}`, { method: "POST", signal, headers });
+      response = await fetch(`${baseUrl}${path}`, { method: "POST", headers });
     } catch (error) {
       throw networkFailure(error);
     }

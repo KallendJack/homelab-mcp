@@ -123,3 +123,8 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   Allowlist gained time limits: past one, the Client is told the Host may be part-way through, but the lock is held
   until the work really ends, so a second Action can't start on a half-changed Host. `ADMIN_DOCKER_SOCKET` defaults
   to Docker's usual path.
+
+  Review found that the ten-second read timeout also aborted Docker writes before the Action deadline,
+  releasing the lock without the partial-change warning. Write requests now stay pending under the
+  Allowlist deadline; an offline regression through the Docker Source proves the warning and held lock.
+  Standards review found no definite violations; duplicate HTTP handling remains a small follow-up concern.

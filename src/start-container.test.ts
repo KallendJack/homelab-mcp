@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { allowlist } from "./allowlist.ts";
 import { Refusal } from "./refusal.ts";
 import { dockerAdmin } from "./sources/docker.ts";
 import { SourceError } from "./sources/source-error.ts";
@@ -73,4 +74,30 @@ describe("start_container", () => {
     await expect(tool.handler({ name: "../etc" })).rejects.toThrow();
     expect(requests).toEqual([]);
   });
+});
+
+it("keeps a slow Docker start locked after the Client times out", async () => {
+  const realTimeout = AbortSignal.timeout;
+  const timeout = vi.spyOn(AbortSignal, "timeout").mockImplementation(() => realTimeout(20));
+  let finish!: (response: Response) => void;
+  const reader = fakeFetch({ [list]: fixture("docker/containers.json") });
+  const fetch: typeof globalThis.fetch = async (input, init) => {
+    if (init?.method !== "POST") return reader.fetch(input, init);
+    return new Promise<Response>((resolve, reject) => {
+      finish = resolve;
+      init.signal?.addEventListener("abort", () => reject(init.signal?.reason), { once: true });
+    });
+  };
+  const [tool] = allowlist([
+    { ...startContainer(dockerAdmin(fetch, dockerUrl)), timeLimitSeconds: 0.05 },
+  ]);
+  try {
+    await expect(tool?.handler({ name: "backup-job" })).rejects.toThrow(
+      /Host may be part-way through/,
+    );
+    await expect(tool?.handler({ name: "backup-job" })).rejects.toThrow(/still running/);
+  } finally {
+    finish?.(new Response(null, { status: 204 }));
+    timeout.mockRestore();
+  }
 });
