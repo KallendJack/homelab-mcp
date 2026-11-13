@@ -1,7 +1,7 @@
 # homelab-mcp
 
 An MCP server that lets an AI assistant see how a self-hosted Docker homelab is doing: its containers, logs and disk,
-plus optional sources such as Gatus and Jellyfin. It only reads for now; a fixed set of deploy actions comes later.
+plus optional sources such as Gatus and Jellyfin. A read-only container reports on the Host; a separate admin container performs a fixed set of deploy Actions.
 
 ## Language
 
@@ -65,7 +65,7 @@ _Avoid_: credential
 Replacing anything in a Tool's output that looks like a Secret with a placeholder, before it leaves the server.
 _Avoid_: masking, scrubbing, sanitising
 
-### Later: changing the Host
+### Changing the Host
 
 **Action**:
 A Tool that changes the Host, such as pulling config or recreating a Service. Every Action is on the Allowlist.
@@ -78,3 +78,11 @@ _Avoid_: whitelist, permissions
 **Service**:
 One entry in a Compose file, which runs as one Container. Actions work on Services.
 _Avoid_: app, container (for the definition)
+
+**Dry run**:
+Asking Compose what an Action on a Service would do, without doing it.
+_Avoid_: simulation, plan, what-if
+
+**Notification**:
+A short push message to the person's phone saying an Action ran and how it ended.
+_Avoid_: alert (that's Gatus), message, ping

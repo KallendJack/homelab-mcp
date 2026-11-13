@@ -101,9 +101,12 @@ Percent used is counted as df counts it: used out of used plus what an ordinary 
 Tools are tested through their handlers, with real Sources on the fake `fetch`, so a test covers the path a real call
 takes except the network.
 
-## Phase 2: Actions (later)
+## Phase 2: Actions
 
-Actions will run in a **second, separate container** that holds the real Docker socket and knows only the Allowlist:
-pull the config repo, dry-run a Service, create and start it, reload the reverse proxy. The read-only server stays as
-it is, so the everyday Tools never run with the power to change anything. Designed properly once phase 1 has been in
-use for a while.
+Actions run in a **second, separate container** from the same image, started in admin mode, that holds the real
+Docker socket and knows only the Allowlist: pull the config repo, dry-run a Service, recreate it, start a stopped
+Container, reload the reverse proxy. The read-only server stays as it is, so the everyday Tools never run with the
+power to change anything. Behaviour and tickets: [`spec-phase-2.md`](spec-phase-2.md).
+
+Compose resolves bind-mount paths on the Host, so the admin container mounts the config repo at the same path it has
+on the Host, and runs the Compose CLI against the real socket.
