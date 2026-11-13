@@ -157,3 +157,10 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   and log by construction (it is only ever part of ntfy's address, and every ntfy failure is a fixed sentence):
   Redaction's random-looking-string rule doesn't catch a topic like `homelab-` plus 24 hex characters, and
   widening it would hide ordinary log text. Exec fixtures are hand-written from the Docker API docs until ticket 16.
+- **2026-11-14**: Ticket 15 (#27), Image and setup guide. One image still runs both modes: Alpine's `docker-cli`,
+  `docker-cli-compose`, `git` and `openssh-client` are added, and the read-only server never starts them. The image
+  stays non-root: in admin mode the unprivileged user reaches the socket through the socket's group (`group_add`),
+  so nothing needs root. CI's smoke test now also starts admin mode with the runner's real socket and checks it is
+  healthy, refuses requests without its Token, lists the Allowlist, and runs Compose through the socket as that user:
+  the first time admin mode has met a real Docker. The README's admin section covers the deploy key, known hosts,
+  the repo's owner and path, and never pre-approving Actions. Version 0.2.0.

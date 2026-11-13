@@ -65,7 +65,7 @@ any other Secret.
 ```yaml
 services:
   homelab-mcp:
-    image: ghcr.io/kallendjack/homelab-mcp:0.1.0
+    image: ghcr.io/kallendjack/homelab-mcp:0.2.0
     environment:
       MCP_TOKEN: ${MCP_TOKEN:?}
       DOCKER_URL: http://socket-proxy:2375
@@ -98,6 +98,66 @@ claude mcp add --transport http homelab http://nas.example:8765/mcp --header "Au
 ```
 
 Then ask things like "is anything unhealthy on the homelab?" or "why did the media server restart last night?".
+
+### 4. Admin mode (optional)
+
+Admin mode is a **second container from the same image** that can make a few specific changes to the Host: pull the
+config repo, preview and recreate one Service, start a stopped Container, reload the reverse proxy. Its Tools and
+what each refuses are in [`docs/spec-phase-2.md`](docs/spec-phase-2.md). It holds Docker's real socket, which is as
+powerful as root on the Host, so keep the read-only server for everyday questions and give this one only to a Client
+that asks before each Action.
+
+```yaml
+services:
+  homelab-mcp-admin:
+    image: ghcr.io/kallendjack/homelab-mcp:0.2.0
+    environment:
+      MCP_TOKEN: ${MCP_TOKEN:?}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?}
+      # The config repo, mounted at the same path it has on the Host: Compose resolves bind mounts there.
+      ADMIN_REPO_PATH: /srv/stacks
+      ADMIN_COMPOSE_FILES: proxy/compose.yaml,media/compose.yaml
+      ADMIN_SERVICE: homelab-mcp-admin
+      ADMIN_DEPLOY_KEY_FILE: /run/secrets/deploy-key
+      ADMIN_KNOWN_HOSTS_FILE: /run/secrets/known-hosts
+      # Optional: reload_proxy, and a Notification for every Action.
+      ADMIN_PROXY_CONTAINER: caddy
+      ADMIN_PROXY_RELOAD_COMMAND: caddy reload --config /etc/caddy/Caddyfile
+      NTFY_URL: https://ntfy.sh
+      NTFY_TOPIC: ${NTFY_TOPIC:?}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /srv/stacks:/srv/stacks
+      - /srv/secrets/homelab-mcp-admin:/run/secrets:ro
+    # The socket's group, so the unprivileged user can use it: `stat -c %g /var/run/docker.sock` on the Host.
+    group_add: ["<socket gid>"]
+    ports:
+      - 8766:8765
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+```
+
+- **The deploy key:** a GitHub deploy key with read access only, for the config repo. Its file must be owned by uid
+  1000 and mode 600, or ssh refuses it. Generate it with `ssh-keygen -t ed25519 -f deploy-key -N ""` and add the
+  `.pub` half under the repo's Settings → Deploy keys.
+- **Known hosts:** GitHub's published SSH keys, from
+  [GitHub's docs](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints),
+  written as `github.com <type> <key>` lines. Checked in advance, so a pull can't be redirected.
+- **The config repo** must be cloned over SSH (`git@github.com:...`) and owned by uid 1000, the image's user.
+- **Its own Service:** `recreate_service` refuses it, since recreating yourself kills the request doing it. Update
+  this container from the Host.
+
+Connect it under a different name from the read-only server, with its own Token:
+
+```sh
+claude mcp add --transport http homelab-admin http://nas.example:8766/mcp --header "Authorization: Bearer <admin-token>"
+```
+
+**Never pre-approve its Tools** (for example, don't add `mcp__homelab-admin__*` to Claude Code's allowed tools).
+Each Action is marked as changing the Host, so the Client asks the person before every call. That question is the
+approval: the server only narrows, previews, logs and notifies.
 
 ## Config
 
