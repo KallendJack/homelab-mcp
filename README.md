@@ -151,6 +151,8 @@ services:
 - **The config repo** must be cloned over SSH (`git@github.com:...`) and owned by uid 1000, the image's user. A NAS
   share's ACL can still refuse that uid on its own: if `docker exec homelab-mcp-admin ls <repo path>` says
   "Permission denied", add the group the share grants (often the owner's own group) to `group_add`.
+- **Tried for real** on the author's Host (2026-11-14, version 0.2.1): `pull_config`, `preview_service`,
+  `recreate_service` and `reload_proxy`. `start_container` waits for a Container that really didn't come back.
 - **Its own Service:** `recreate_service` refuses it, since recreating yourself kills the request doing it. Update
   this container from the Host.
 
