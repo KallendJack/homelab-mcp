@@ -175,3 +175,9 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   A Refusal can now carry a detail for the server's log only; `pull_config` puts Git's own error output there, and
   the Server logs it redacted after the sentence. The Client still sees only the sentence. The log isn't secret (the
   read-only server can read it), so the detail gets the same Redaction as every log line.
+- **2026-11-14**: Ticket 16 (#28), first real deploy on the author's Host. `pull_config` first failed: the NAS
+  share's ACL refused uid 1000 on its own, fixed in the homelab repo by adding the owner's group (now in the README).
+  `reload_proxy` then failed because `socketFetch` dropped request bodies (ticket 17), and the hidden Git error led
+  to ticket 18. With 0.2.1, `pull_config`, `preview_service`, `recreate_service` and `reload_proxy` all worked
+  for real. `start_container` is left for the next Container that doesn't come back by itself, rather than stopping
+  one on purpose.
