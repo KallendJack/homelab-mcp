@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it } from "vitest";
 import { pullConfig } from "./pull-config.ts";
+import { Refusal } from "./refusal.ts";
 
 const folders: string[] = [];
 function git(cwd: string, ...args: string[]) {
@@ -93,6 +94,15 @@ it("reports Services for changed bind-mounted config in either revision", async 
   }).handler({});
   expect(result).toContain("Changed Services:\nproxy/compose.yaml: proxy");
   expect(result).not.toContain("untouched");
+});
+it("keeps Git's own error for the server log, out of the Client's sentence", async () => {
+  const { root, repo, tool } = setup();
+  git(repo, "remote", "set-url", "origin", join(root, "missing"));
+  const error = await tool.handler({}).catch((e: unknown) => e);
+  expect(error).toBeInstanceOf(Refusal);
+  expect((error as Refusal).message).toMatch(/^Git couldn't finish the pull/);
+  expect((error as Refusal).message).not.toContain("missing");
+  expect((error as Refusal).logDetail).toMatch(/fatal: .*missing/);
 });
 it("refuses an unavailable deploy-key file before moving HEAD", async () => {
   const { repo, remote, keyFile, tool } = setup();

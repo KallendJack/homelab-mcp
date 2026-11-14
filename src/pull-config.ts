@@ -42,10 +42,12 @@ export function pullConfig(settings: PullConfigSettings): Action {
         return await pull(git, settings);
       } catch (error) {
         if (error instanceof Refusal) throw error;
-        // Git's own message can name the remote's address, so only a fixed sentence reaches the Client.
+        // Git's own message can name the remote's address, so only a fixed sentence reaches the Client;
+        // Git's message goes to the server's log, redacted there like every log line.
         throw new Refusal(
           "Git couldn't finish the pull, and the config repo wasn't changed. Check the remote, the deploy key " +
             "and the known hosts file.",
+          { logDetail: gitError(error) },
         );
       }
     },
@@ -165,6 +167,13 @@ function withoutGitSettings(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   return Object.fromEntries(
     Object.entries(env).filter(([name]) => !name.startsWith("GIT_") && name !== "SSH_AUTH_SOCK"),
   );
+}
+
+/** What Git itself said when a command failed: its error output, or the failure's own message without one. */
+function gitError(error: unknown): string {
+  const stderr = (error as { stderr?: unknown }).stderr;
+  if (typeof stderr === "string" && stderr.trim() !== "") return stderr.trim();
+  return error instanceof Error ? error.message : String(error);
 }
 
 /** Git runs GIT_SSH_COMMAND through a shell, so each path is quoted. */
