@@ -4,6 +4,9 @@ An MCP server that lets an AI assistant, such as Claude Code, see how a self-hos
 containers, logs and disk, plus Gatus health checks, recently added Jellyfin media and a daily Report when those are
 set up. It only reads, through a Docker socket proxy, so nothing it does can change a container.
 
+An optional second container runs the same image in [admin mode](#4-admin-mode-optional), for deploys the person approves one
+by one: pull the config repo, preview and recreate one Service, start a stopped Container, reload the reverse proxy.
+
 The design is in [`docs/architecture.md`](docs/architecture.md), the vocabulary in [`CONTEXT.md`](CONTEXT.md), and how
 it was built in [`docs/process.md`](docs/process.md).
 
