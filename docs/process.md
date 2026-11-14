@@ -164,3 +164,9 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   healthy, refuses requests without its Token, lists the Allowlist, and runs Compose through the socket as that user:
   the first time admin mode has met a real Docker. The README's admin section covers the deploy key, known hosts,
   the repo's owner and path, and never pre-approving Actions. Version 0.2.0.
+- **2026-11-14**: Ticket 17 (#35), found running ticket 16 on the Host: `reload_proxy` failed with Docker's "No exec
+  command specified". The socket `fetch` never wrote a request's body, so the exec request arrived without its
+  command. The tests missed it because every Docker test answers through the fake `fetch`, which reads the body,
+  and the socket's own tests only sent POSTs without one. `socketFetch` now sends a text body and refuses any other
+  kind rather than dropping it. The README also notes that a NAS share's ACL can refuse uid 1000 on its own, which
+  is what first stopped `pull_config` on the Host. Version 0.2.1.

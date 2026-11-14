@@ -4,6 +4,9 @@ An MCP server that lets an AI assistant, such as Claude Code, see how a self-hos
 containers, logs and disk, plus Gatus health checks, recently added Jellyfin media and a daily Report when those are
 set up. It only reads, through a Docker socket proxy, so nothing it does can change a container.
 
+An optional second container runs the same image in [admin mode](#4-admin-mode-optional), for deploys the person approves one
+by one: pull the config repo, preview and recreate one Service, start a stopped Container, reload the reverse proxy.
+
 The design is in [`docs/architecture.md`](docs/architecture.md), the vocabulary in [`CONTEXT.md`](CONTEXT.md), and how
 it was built in [`docs/process.md`](docs/process.md).
 
@@ -65,7 +68,7 @@ any other Secret.
 ```yaml
 services:
   homelab-mcp:
-    image: ghcr.io/kallendjack/homelab-mcp:0.2.0
+    image: ghcr.io/kallendjack/homelab-mcp:0.2.1
     environment:
       MCP_TOKEN: ${MCP_TOKEN:?}
       DOCKER_URL: http://socket-proxy:2375
@@ -110,7 +113,7 @@ that asks before each Action.
 ```yaml
 services:
   homelab-mcp-admin:
-    image: ghcr.io/kallendjack/homelab-mcp:0.2.0
+    image: ghcr.io/kallendjack/homelab-mcp:0.2.1
     environment:
       MCP_TOKEN: ${MCP_TOKEN:?}
       ADMIN_TOKEN: ${ADMIN_TOKEN:?}
@@ -145,7 +148,9 @@ services:
 - **Known hosts:** GitHub's published SSH keys, from
   [GitHub's docs](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints),
   written as `github.com <type> <key>` lines. Checked in advance, so a pull can't be redirected.
-- **The config repo** must be cloned over SSH (`git@github.com:...`) and owned by uid 1000, the image's user.
+- **The config repo** must be cloned over SSH (`git@github.com:...`) and owned by uid 1000, the image's user. A NAS
+  share's ACL can still refuse that uid on its own: if `docker exec homelab-mcp-admin ls <repo path>` says
+  "Permission denied", add the group the share grants (often the owner's own group) to `group_add`.
 - **Its own Service:** `recreate_service` refuses it, since recreating yourself kills the request doing it. Update
   this container from the Host.
 

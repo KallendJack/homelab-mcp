@@ -1,6 +1,7 @@
 # homelab-mcp
 
-An MCP server that lets an AI assistant read how a self-hosted Docker homelab is doing. Read `CONTEXT.md` before
+An MCP server that lets an AI assistant read how a self-hosted Docker homelab is doing, with an optional admin mode for
+approved deploys. Read `CONTEXT.md` before
 naming anything, and use its terms (and avoid its _Avoid_ lists) in code, tests, Tool descriptions and commits.
 
 ## Commands
