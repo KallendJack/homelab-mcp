@@ -312,6 +312,28 @@ describe("the Server", () => {
     );
   });
 
+  it("logs a refusal's detail, redacted, without showing it to the Client", async () => {
+    const logged = vi.spyOn(console, "log").mockImplementation(() => {});
+    const action = fakeAction(async () => {
+      throw new Refusal("Git couldn't finish the pull.", {
+        logDetail: "fatal: can't cd\nTOKEN=abc123secret",
+      });
+    });
+    const { url } = await start(allowlist([action]));
+    const client = await connect(url);
+
+    const result = await client.callTool({
+      name: "start_container",
+      arguments: { name: "vpn-client" },
+    });
+    expect(result.content).toEqual([{ type: "text", text: "Git couldn't finish the pull." }]);
+    expect(logged).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^start_container \{"name":"vpn-client"\} failed in \d+ ms: Git couldn't finish the pull\. \(fatal: can't cd \/ TOKEN=\[redacted\]\)$/,
+      ),
+    );
+  });
+
   it("starts a stopped Container end to end, through Docker's own socket", async () => {
     vi.spyOn(console, "log").mockImplementation(() => {});
     const started: string[] = [];

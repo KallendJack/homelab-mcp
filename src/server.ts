@@ -121,7 +121,11 @@ function mcpServer(tools: Tool[]): McpServer {
         } catch (error) {
           // A Source failing or a Tool refusing has a sentence written for the Client.
           if (error instanceof SourceError || error instanceof Refusal) {
-            console.log(`${call} failed in ${took()}: ${redact(error.message)}`);
+            const detail =
+              error instanceof Refusal && error.logDetail
+                ? ` (${redact(error.logDetail).split("\n").join(" / ")})`
+                : "";
+            console.log(`${call} failed in ${took()}: ${redact(error.message)}${detail}`);
             return reply(error.message, { isError: true });
           }
           // Anything else is a bug: its details stay in the server log.

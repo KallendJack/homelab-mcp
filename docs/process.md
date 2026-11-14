@@ -170,3 +170,8 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   and the socket's own tests only sent POSTs without one. `socketFetch` now sends a text body and refuses any other
   kind rather than dropping it. The README also notes that a NAS share's ACL can refuse uid 1000 on its own, which
   is what first stopped `pull_config` on the Host. Version 0.2.1.
+- **2026-11-14**: Ticket 18 (#36), also found running ticket 16: when the admin container couldn't enter the config
+  repo, `pull_config` answered only its fixed sentence, and the cause took running Git by hand inside the container.
+  A Refusal can now carry a detail for the server's log only; `pull_config` puts Git's own error output there, and
+  the Server logs it redacted after the sentence. The Client still sees only the sentence. The log isn't secret (the
+  read-only server can read it), so the detail gets the same Redaction as every log line.
