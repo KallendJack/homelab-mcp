@@ -40,6 +40,23 @@ describe("socketFetch", () => {
     expect(await response.text()).toBe("");
   });
 
+  it("sends a POST's body", async () => {
+    let seen = "";
+    const path = await serveOnSocket((request, response) => {
+      request.setEncoding("utf8");
+      request.on("data", (chunk: string) => {
+        seen += chunk;
+      });
+      request.on("end", () => response.end());
+    });
+    await socketFetch(path)("http://docker/containers/web/exec", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: '{"Cmd":["true"]}',
+    });
+    expect(seen).toBe('{"Cmd":["true"]}');
+  });
+
   it("gives up when the signal times out, with the signal's own reason", async () => {
     const path = await serveOnSocket(() => {
       // Never answers.

@@ -9,6 +9,11 @@ export function socketFetch(socketPath: string): typeof fetch {
   return ((input: string | URL | Request, init?: RequestInit) => {
     const url = new URL(input instanceof Request ? input.url : String(input));
     const signal = init?.signal ?? undefined;
+    // Docker's requests carry JSON text; any other kind of body would be silently dropped, so it's refused.
+    const body = init?.body ?? undefined;
+    if (body !== undefined && typeof body !== "string") {
+      return Promise.reject(new TypeError("socketFetch only sends text bodies"));
+    }
     return new Promise<Response>((resolve, reject) => {
       if (signal?.aborted) {
         reject(signal.reason);
@@ -38,7 +43,7 @@ export function socketFetch(socketPath: string): typeof fetch {
         reject(signal?.aborted ? signal.reason : new TypeError("fetch failed", { cause: error }));
       });
       signal?.addEventListener("abort", () => req.destroy(), { once: true });
-      req.end();
+      req.end(body);
     });
   }) as typeof fetch;
 }
