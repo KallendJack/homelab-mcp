@@ -7,7 +7,7 @@ set up. It only reads, through a Docker socket proxy, so nothing it does can cha
 An optional second container runs the same image in [admin mode](#4-admin-mode-optional), for deploys the person approves one
 by one: pull the config repo, preview and recreate one Service, start a stopped Container, reload the reverse proxy.
 
-The design is in [`docs/architecture.md`](docs/architecture.md), the vocabulary in [`CONTEXT.md`](CONTEXT.md), and how
+The design is in [`docs/architecture.md`](docs/architecture.md), the vocabulary in [`GLOSSARY.md`](GLOSSARY.md), and how
 it was built in [`docs/process.md`](docs/process.md).
 
 ## Tools

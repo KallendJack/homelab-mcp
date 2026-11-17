@@ -1,6 +1,6 @@
 # Phase 2 spec: Actions
 
-What phase 2 adds, in behaviour a test can check. Terms are from [`CONTEXT.md`](../CONTEXT.md). Phase 1 is
+What phase 2 adds, in behaviour a test can check. Terms are from [`GLOSSARY.md`](../GLOSSARY.md). Phase 1 is
 unchanged: the read-only server keeps its proxy, its Token and its Tools ([ADR 0002](adr/0002-docker-through-a-read-only-proxy.md)).
 
 ## Shape

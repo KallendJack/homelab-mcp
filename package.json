@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify": "pnpm check && pnpm typecheck && pnpm test"
+    "verify": "pnpm check && pnpm typecheck && pnpm test && node scripts/check-size.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",

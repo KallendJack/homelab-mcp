@@ -24,5 +24,6 @@
     "formatter": {
       "quoteStyle": "double"
     }
-  }
+  },
+  "extends": ["./biome.house.json"]
 }
