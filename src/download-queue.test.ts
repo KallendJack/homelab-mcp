@@ -45,6 +45,10 @@ describe("download_queue", () => {
     expect(names({})).not.toContain("download_queue");
     expect(names({ sonarr: true })).toContain("download_queue");
     expect(names({ radarr: true })).toContain("download_queue");
+    expect(names({})).not.toContain("import_candidates");
+    expect(names({ sonarr: true })).toContain("import_candidates");
+    expect(names({ radarr: true })).toContain("import_candidates");
+    expect(names({ sonarr: true, radarr: true })).not.toContain("manual_import");
   });
 
   it("lists both queues together, problems first, one line per download with the app's own message", async () => {

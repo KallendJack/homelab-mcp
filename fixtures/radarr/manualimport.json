@@ -1,0 +1,29 @@
+[
+  {
+    "id": 21,
+    "path": "/data/downloads/complete/radarr/Second.Film.2019.1080p.BluRay.x264-OTHER/Second.Film.2019.1080p.BluRay.x264-OTHER.mkv",
+    "relativePath": "Second.Film.2019.1080p.BluRay.x264-OTHER.mkv",
+    "folderName": "Second.Film.2019.1080p.BluRay.x264-OTHER",
+    "name": "Second.Film.2019.1080p.BluRay.x264-OTHER",
+    "size": 4000000000,
+    "movie": { "id": 32, "title": "Second Film", "year": 2019 },
+    "releaseGroup": "OTHER",
+    "quality": {
+      "quality": {
+        "id": 7,
+        "name": "Bluray-1080p",
+        "source": "bluray",
+        "resolution": 1080,
+        "modifier": "none"
+      },
+      "revision": { "version": 1, "real": 0, "isRepack": false }
+    },
+    "languages": [{ "id": 1, "name": "English" }],
+    "qualityWeight": 0,
+    "customFormats": [],
+    "customFormatScore": 0,
+    "indexerFlags": 0,
+    "rejections": [],
+    "downloadId": "1111AAAA1111AAAA1111AAAA1111AAAA1111AAAA"
+  }
+]

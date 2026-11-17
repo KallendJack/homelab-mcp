@@ -1,0 +1,101 @@
+[
+  {
+    "id": 11,
+    "path": "/data/downloads/complete/sonarr/Pack.Show.S01-S03.1080p.BluRay.x265-PACK/Pack.Show.S01E01.1080p.BluRay.x265-PACK.mkv",
+    "relativePath": "Pack.Show.S01E01.1080p.BluRay.x265-PACK.mkv",
+    "folderName": "Pack.Show.S01-S03.1080p.BluRay.x265-PACK",
+    "name": "Pack.Show.S01E01.1080p.BluRay.x265-PACK",
+    "size": 1500000000,
+    "series": { "id": 9, "title": "Pack Show" },
+    "seasonNumber": 1,
+    "episodes": [
+      { "id": 901, "seriesId": 9, "seasonNumber": 1, "episodeNumber": 1, "title": "Pilot" }
+    ],
+    "releaseGroup": "PACK",
+    "quality": {
+      "quality": { "id": 7, "name": "Bluray-1080p", "source": "bluray", "resolution": 1080 },
+      "revision": { "version": 1, "real": 0, "isRepack": false }
+    },
+    "languages": [{ "id": 1, "name": "English" }],
+    "qualityWeight": 0,
+    "customFormats": [],
+    "customFormatScore": 0,
+    "indexerFlags": 0,
+    "releaseType": "seasonPack",
+    "rejections": [],
+    "downloadId": "CCCC3333CCCC3333CCCC3333CCCC3333CCCC3333"
+  },
+  {
+    "id": 12,
+    "path": "/data/downloads/complete/sonarr/Pack.Show.S01-S03.1080p.BluRay.x265-PACK/Pack.Show.S01E02.1080p.BluRay.x265-PACK.mkv",
+    "relativePath": "Pack.Show.S01E02.1080p.BluRay.x265-PACK.mkv",
+    "folderName": "Pack.Show.S01-S03.1080p.BluRay.x265-PACK",
+    "name": "Pack.Show.S01E02.1080p.BluRay.x265-PACK",
+    "size": 1500000000,
+    "series": { "id": 9, "title": "Pack Show" },
+    "seasonNumber": 1,
+    "episodes": [
+      { "id": 902, "seriesId": 9, "seasonNumber": 1, "episodeNumber": 2, "title": "Second" }
+    ],
+    "releaseGroup": "PACK",
+    "quality": {
+      "quality": { "id": 7, "name": "Bluray-1080p", "source": "bluray", "resolution": 1080 },
+      "revision": { "version": 1, "real": 0, "isRepack": false }
+    },
+    "languages": [{ "id": 1, "name": "English" }],
+    "qualityWeight": 0,
+    "customFormats": [],
+    "customFormatScore": 0,
+    "indexerFlags": 0,
+    "releaseType": "seasonPack",
+    "rejections": [],
+    "downloadId": "CCCC3333CCCC3333CCCC3333CCCC3333CCCC3333"
+  },
+  {
+    "id": 13,
+    "path": "/data/downloads/complete/sonarr/Pack.Show.S01-S03.1080p.BluRay.x265-PACK/Sample/pack.show.s01e01.sample.mkv",
+    "relativePath": "Sample/pack.show.s01e01.sample.mkv",
+    "folderName": "Pack.Show.S01-S03.1080p.BluRay.x265-PACK",
+    "name": "pack.show.s01e01.sample",
+    "size": 40000000,
+    "series": { "id": 9, "title": "Pack Show" },
+    "seasonNumber": 1,
+    "episodes": [
+      { "id": 901, "seriesId": 9, "seasonNumber": 1, "episodeNumber": 1, "title": "Pilot" }
+    ],
+    "releaseGroup": "PACK",
+    "quality": {
+      "quality": { "id": 7, "name": "Bluray-1080p", "source": "bluray", "resolution": 1080 },
+      "revision": { "version": 1, "real": 0, "isRepack": false }
+    },
+    "languages": [{ "id": 1, "name": "English" }],
+    "qualityWeight": 0,
+    "customFormats": [],
+    "customFormatScore": 0,
+    "indexerFlags": 0,
+    "releaseType": "seasonPack",
+    "rejections": [{ "reason": "Sample", "type": "permanent" }],
+    "downloadId": "CCCC3333CCCC3333CCCC3333CCCC3333CCCC3333"
+  },
+  {
+    "id": 14,
+    "path": "/data/downloads/complete/sonarr/Pack.Show.S01-S03.1080p.BluRay.x265-PACK/Extras/Behind.The.Scenes.mkv",
+    "relativePath": "Extras/Behind.The.Scenes.mkv",
+    "folderName": "Pack.Show.S01-S03.1080p.BluRay.x265-PACK",
+    "name": "Behind.The.Scenes",
+    "size": 300000000,
+    "releaseGroup": "",
+    "quality": {
+      "quality": { "id": 0, "name": "Unknown", "source": "unknown", "resolution": 0 },
+      "revision": { "version": 1, "real": 0, "isRepack": false }
+    },
+    "languages": [],
+    "qualityWeight": 0,
+    "customFormats": [],
+    "customFormatScore": 0,
+    "indexerFlags": 0,
+    "releaseType": "unknown",
+    "rejections": [{ "reason": "Unknown Series", "type": "permanent" }],
+    "downloadId": "CCCC3333CCCC3333CCCC3333CCCC3333CCCC3333"
+  }
+]

@@ -47,7 +47,25 @@ export type QueueItem = {
   downloaded: boolean;
   /** Whether it's still waiting for the app's delay, so it hasn't reached the download client. */
   waiting: boolean;
+  /** The download client's id for it, once it has reached the download client. */
+  downloadId?: string;
 };
+
+/** One file in a download, and what a manual import would do with it. */
+export type ImportCandidate = {
+  /** The file's path within the download. */
+  file: string;
+  /** "Pack Show S01E01", "Pack Show S01E01-E02" or "Second Film (2019)": what the app matched it to. */
+  match?: string;
+  quality?: string;
+  /** The app's reasons for not importing it, as it words them. */
+  rejections: string[];
+  /** Matched with no rejection, so a manual import takes it. */
+  importable: boolean;
+};
+
+/** What the app is doing with an import it was asked for. */
+export type ImportProgress = { status: "running" | "done" | "failed"; message?: string };
 
 export type Queue = {
   items: QueueItem[];
@@ -68,6 +86,14 @@ export type Arr = {
    * undefined when the setting can't be read.
    */
   redownloadsFailed(): Promise<boolean | undefined>;
+  /** Every video file in a download, matched by the app, without importing anything. */
+  importCandidates(downloadId: string): Promise<ImportCandidate[]>;
+  /**
+   * Asks the app to import a download's importable files, as importCandidates shows them, leaving the rest. Asks
+   * nothing when none is importable. Returns the app's id for the import, to follow with importProgress.
+   */
+  manualImport(downloadId: string): Promise<{ importId?: number; candidates: ImportCandidate[] }>;
+  importProgress(importId: number): Promise<ImportProgress>;
 };
 
 const PAGE_SIZE = 100;
@@ -94,6 +120,37 @@ type QueueRecord = z.infer<typeof record>;
 const page = z.object({ totalRecords: z.number(), records: z.array(record) });
 const downloadClientSettings = z.object({ autoRedownloadFailed: z.boolean() });
 
+/** A file as the app's manual import lists it. The fields the import itself needs are passed back unchanged. */
+const candidate = z.object({
+  path: z.string(),
+  relativePath: z.string().optional(),
+  name: z.string().optional(),
+  folderName: z.string().optional(),
+  series: z.object({ id: z.number(), title: z.string() }).optional(),
+  seasonNumber: z.number().optional(),
+  episodes: z
+    .array(z.object({ id: z.number(), seasonNumber: z.number(), episodeNumber: z.number() }))
+    .optional(),
+  movie: z.object({ id: z.number(), title: z.string(), year: z.number().optional() }).optional(),
+  quality: z
+    .object({ quality: z.object({ name: z.string() }).passthrough() })
+    .passthrough()
+    .optional(),
+  languages: z.array(z.unknown()).optional(),
+  releaseGroup: z.string().optional(),
+  indexerFlags: z.number().optional(),
+  releaseType: z.string().optional(),
+  rejections: z.array(z.object({ reason: z.string() })).optional(),
+  downloadId: z.string().optional(),
+});
+type Candidate = z.infer<typeof candidate>;
+
+const command = z.object({
+  id: z.number(),
+  status: z.string(),
+  message: z.string().optional(),
+});
+
 /** States whose files have already arrived. */
 const DOWNLOADED_STATES: readonly QueueState[] = [
   "import blocked",
@@ -106,6 +163,11 @@ const DOWNLOADED_STATES: readonly QueueState[] = [
 export function arr(fetch: typeof globalThis.fetch, url: string, apiKey: string, app: ArrApp): Arr {
   const http = httpRequests(fetch, url, app, { "X-Api-Key": apiKey });
   const { getJson } = http;
+  const candidates = (downloadId: string) =>
+    getJson(
+      `/api/v3/manualimport?downloadId=${encodeURIComponent(downloadId)}&filterExistingFiles=true`,
+      z.array(candidate),
+    );
   const include =
     app === "Sonarr"
       ? "includeUnknownSeriesItems=true&includeSeries=true&includeEpisode=true"
@@ -149,6 +211,34 @@ export function arr(fetch: typeof globalThis.fetch, url: string, apiKey: string,
         if (error instanceof SourceError) return undefined;
         throw error;
       }
+    },
+    async importCandidates(downloadId) {
+      return (await candidates(downloadId)).map(importCandidate);
+    },
+    async manualImport(downloadId) {
+      const found = await candidates(downloadId);
+      const files = found
+        .filter((c) => importCandidate(c).importable)
+        .map((c) => importFile(app, c));
+      if (files.length === 0) return { candidates: found.map(importCandidate) };
+      const { status, text } = await http.post("/api/v3/command", {
+        json: { name: "ManualImport", importMode: "auto", files },
+        timeLimited: true,
+      });
+      if (status < 200 || status >= 300)
+        throw new SourceError(`${app} answered with HTTP ${status}.`);
+      const parsed = command.safeParse(safeJson(text));
+      if (!parsed.success) throw new SourceError(`${app} answered with something unexpected.`);
+      return { importId: parsed.data.id, candidates: found.map(importCandidate) };
+    },
+    async importProgress(importId) {
+      const { status, message } = await getJson(`/api/v3/command/${importId}`, command);
+      const done = status === "completed";
+      const failed = ["failed", "aborted", "cancelled", "orphaned"].includes(status);
+      return {
+        status: done ? "done" : failed ? "failed" : "running",
+        ...(message ? { message } : {}),
+      };
     },
   };
 }
@@ -200,6 +290,7 @@ function queueItem(app: ArrApp, group: QueueRecord[]): QueueItem {
     matched: worst.series !== undefined || worst.movie !== undefined,
     downloaded: group.some((r) => DOWNLOADED_STATES.includes(stateOf(r))),
     waiting: group.every((r) => r.status === "delay"),
+    ...(worst.downloadId ? { downloadId: worst.downloadId } : {}),
   };
 }
 
@@ -241,4 +332,55 @@ function titleOf(group: QueueRecord[]): string {
     return first.series.title;
   }
   return first.title ?? `queue record ${first.id}`;
+}
+
+function safeJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+}
+
+function importCandidate(c: Candidate): ImportCandidate {
+  const match = matchOf(c);
+  const rejections = (c.rejections ?? []).map((r) => r.reason);
+  return {
+    file: c.relativePath ?? c.name ?? c.path,
+    ...(match ? { match } : {}),
+    ...(c.quality ? { quality: c.quality.quality.name } : {}),
+    rejections,
+    importable: match !== undefined && rejections.length === 0,
+  };
+}
+
+/** What the app matched a file to: a film, or a series with at least one episode. */
+function matchOf(c: Candidate): string | undefined {
+  if (c.movie) return c.movie.year ? `${c.movie.title} (${c.movie.year})` : c.movie.title;
+  const [first, ...rest] = c.episodes ?? [];
+  if (!c.series || !first) return undefined;
+  const two = (n: number) => String(n).padStart(2, "0");
+  const codes = [first, ...rest].map((e) => `S${two(e.seasonNumber)}E${two(e.episodeNumber)}`);
+  return `${c.series.title} ${codes.join(", ")}`;
+}
+
+/** The import's own description of one file: the app's matches and details, passed back as it gave them. */
+function importFile(app: ArrApp, c: Candidate): Record<string, unknown> {
+  const shared = {
+    path: c.path,
+    ...(c.folderName !== undefined ? { folderName: c.folderName } : {}),
+    quality: c.quality,
+    languages: c.languages ?? [],
+    releaseGroup: c.releaseGroup ?? "",
+    indexerFlags: c.indexerFlags ?? 0,
+    downloadId: c.downloadId,
+  };
+  if (app === "Radarr") return { ...shared, movieId: c.movie?.id };
+  return {
+    ...shared,
+    seriesId: c.series?.id,
+    seasonNumber: c.seasonNumber,
+    episodeIds: (c.episodes ?? []).map((e) => e.id),
+    releaseType: c.releaseType ?? "unknown",
+  };
 }

@@ -213,3 +213,4 @@ pnpm start    # runs the server; set MCP_TOKEN first
 
 Releases: bump `version` in `package.json`, merge, then push a matching tag (`git tag v0.1.0 && git push origin v0.1.0`).
 CI smoke-tests the image and publishes it to `ghcr.io/kallendjack/homelab-mcp:<version>`.
+`import_candidates` previews each file in a queued download using Sonarr or Radarr matches. In admin mode, `manual_import` imports matched files with no rejections and lists skipped files and reasons. It refuses when none can be imported. Both use the app and queue id from `download_queue`; both require the corresponding Sonarr or Radarr settings. Import completion reports the app command outcome; check the queue and library to confirm the files arrived.

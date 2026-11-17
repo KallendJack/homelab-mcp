@@ -123,3 +123,4 @@ config can refuse the same value for both: one Token would let any read-only Cli
 uses the same Server module; an Action is a Tool with `changesHost` set, which makes the Server mark it with
 `destructiveHint` (so the Client asks the person first) and log its whole answer on one line. The one-at-a-time lock lives
 in the Allowlist, shared by every request, since the Server builds a fresh MCP server per request.
+`manual-import.ts` formats the read Tool `import_candidates` and the admin Action `manual_import`. `sources/arr.ts` parses candidates, submits only matched files without rejections, and reads command progress. `queue-lookup.ts` shares queue selection with retry. Manual import uses the existing Allowlist for marking, serialization, logging and notifications.

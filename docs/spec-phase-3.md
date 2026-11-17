@@ -96,8 +96,9 @@ and error, and the author's downloads all come through them.
 
 **`manual_import`**
 
-14. Imports one queue item's files using the matches `import_candidates` shows. Refuses, importing nothing, when
-    any file has a rejection or no match, and lists them: those need fixing in the app.
+14. Imports the matched files with no rejections in one queue item using the matches `import_candidates` shows.
+    Skips and lists rejected or unmatched files with their reasons. Refuses, importing nothing, when no file can
+    be imported. Jack approved this partial-import behavior on 2026-11-17.
 
 **`request_media`**
 
