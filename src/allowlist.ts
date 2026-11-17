@@ -116,9 +116,18 @@ async function withinLimit(work: Promise<string>, name: string, seconds: number)
   }
 }
 
-/** What admin mode logs at start: the Action names, the config repo's path and whether Notifications are on. */
-export function adminStartUp(repoPath: string, tools: Tool[], notificationsOn: boolean): string {
+/**
+ * What admin mode logs at start: the Action names, the config repo's path, whether Notifications are on and which
+ * media Sources are on. Names only, never an address or a key.
+ */
+export function adminStartUp(
+  repoPath: string,
+  tools: Tool[],
+  notificationsOn: boolean,
+  mediaSources: string[] = [],
+): string {
   const names = tools.map((tool) => tool.name).join(", ") || "none";
   const notifications = notificationsOn ? "on" : "off";
-  return `Allowlist: ${names}. Config repo: ${repoPath}. Notifications: ${notifications}.`;
+  const media = mediaSources.join(", ") || "none";
+  return `Allowlist: ${names}. Config repo: ${repoPath}. Notifications: ${notifications}. Media Sources: ${media}.`;
 }

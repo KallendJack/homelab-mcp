@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { httpRequests } from "./http.ts";
+import { SourceError } from "./source-error.ts";
 
 /** Sonarr or Radarr: both speak the same v3 API, with series and episodes in one and films in the other. */
 export type ArrApp = "Sonarr" | "Radarr";
@@ -36,6 +37,12 @@ export type QueueItem = {
   progress?: number;
   /** The app's own warning or error, as it words it. */
   message?: string;
+  /** The release's own name, such as "Example.Show.S02E03.1080p.WEB.h264-GROUP". */
+  release?: string;
+  /** Every queue record of this download: a season pack has one per episode. */
+  recordIds: number[];
+  /** Whether the app matched it to a series or film, which it needs to search for a replacement. */
+  matched: boolean;
 };
 
 export type Queue = {
@@ -47,6 +54,11 @@ export type Queue = {
 export type Arr = {
   app: ArrApp;
   queue(): Promise<Queue>;
+  /**
+   * Removes one download from the queue and the download client and blocklists its release; the app then searches
+   * for a replacement. "gone" when the app no longer has that queue record.
+   */
+  removeFromQueue(id: number): Promise<"removed" | "gone">;
 };
 
 const PAGE_SIZE = 100;
@@ -74,7 +86,8 @@ const page = z.object({ totalRecords: z.number(), records: z.array(record) });
 
 /** Reads Sonarr's or Radarr's queue at `url`, sending `apiKey` in the X-Api-Key header. */
 export function arr(fetch: typeof globalThis.fetch, url: string, apiKey: string, app: ArrApp): Arr {
-  const { getJson } = httpRequests(fetch, url, app, { "X-Api-Key": apiKey });
+  const http = httpRequests(fetch, url, app, { "X-Api-Key": apiKey });
+  const { getJson } = http;
   const include =
     app === "Sonarr"
       ? "includeUnknownSeriesItems=true&includeSeries=true&includeEpisode=true"
@@ -99,6 +112,14 @@ export function arr(fetch: typeof globalThis.fetch, url: string, apiKey: string,
         items: downloads(records).map((group) => queueItem(app, group)),
         ...(records.length < total ? { shortOf: { read: records.length, total } } : {}),
       };
+    },
+    async removeFromQueue(id) {
+      const query = "removeFromClient=true&blocklist=true&skipRedownload=false";
+      const { status } = await http.delete(`/api/v3/queue/${id}?${query}`, { timeLimited: true });
+      if (status === 404) return "gone";
+      if (status < 200 || status >= 300)
+        throw new SourceError(`${app} answered with HTTP ${status}.`);
+      return "removed";
     },
   };
 }
@@ -145,6 +166,9 @@ function queueItem(app: ArrApp, group: QueueRecord[]): QueueItem {
     state,
     ...(progress !== undefined ? { progress } : {}),
     ...(message ? { message } : {}),
+    ...(worst.title ? { release: worst.title } : {}),
+    recordIds: group.map((r) => r.id),
+    matched: worst.series !== undefined || worst.movie !== undefined,
   };
 }
 

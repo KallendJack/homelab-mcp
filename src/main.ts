@@ -3,8 +3,9 @@ import { type AdminConfig, type Config, ConfigError, loadConfig, sourcesOn } fro
 import { pullConfig } from "./pull-config.ts";
 import { previewService, recreateService } from "./recreate-service.ts";
 import { reloadProxy } from "./reload-proxy.ts";
+import { retryDownload } from "./retry-download.ts";
 import { type RunningServer, startServer } from "./server.ts";
-import { arr } from "./sources/arr.ts";
+import { type Arr, arr } from "./sources/arr.ts";
 import { compose } from "./sources/compose.ts";
 import { disk } from "./sources/disk.ts";
 import { docker, dockerAdmin } from "./sources/docker.ts";
@@ -55,7 +56,7 @@ async function startReadOnly(config: Config): Promise<RunningServer> {
 }
 
 /** The admin server: only the Allowlist, behind its own Token, and never a read Tool. */
-async function startAdmin(admin: AdminConfig, port: number): Promise<RunningServer> {
+async function startAdmin(config: Config, admin: AdminConfig): Promise<RunningServer> {
   // The host in this URL is a placeholder: socketFetch sends every request to Docker's own socket.
   const host = dockerAdmin(socketFetch(admin.dockerSocket), "http://docker");
   const services = {
@@ -71,6 +72,10 @@ async function startAdmin(admin: AdminConfig, port: number): Promise<RunningServ
   const notifier = admin.notifications
     ? ntfy(fetch, admin.notifications.url, admin.notifications.topic)
     : undefined;
+  const arrs: Arr[] = [
+    ...(config.sonarr ? [arr(fetch, config.sonarr.url, config.sonarr.apiKey, "Sonarr")] : []),
+    ...(config.radarr ? [arr(fetch, config.radarr.url, config.radarr.apiKey, "Radarr")] : []),
+  ];
   const tools = allowlist(
     [
       pullConfig(admin),
@@ -79,19 +84,19 @@ async function startAdmin(admin: AdminConfig, port: number): Promise<RunningServ
       startContainer(host),
       // Offered only when configured, as an optional Source's Tool is.
       ...(admin.proxy ? [reloadProxy(host, admin.proxy)] : []),
+      ...(arrs.length > 0 ? [retryDownload(arrs)] : []),
     ],
     notifier ? { notifier } : {},
   );
-  const server = await startServer({ token: admin.token, port }, tools);
-  const startUp = adminStartUp(admin.repoPath, tools, notifier !== undefined);
-  console.log(`homelab-mcp admin mode listening on port ${port}. ${startUp}`);
+  const server = await startServer({ token: admin.token, port: config.port }, tools);
+  const media = arrs.map((a) => a.app);
+  const startUp = adminStartUp(admin.repoPath, tools, notifier !== undefined, media);
+  console.log(`homelab-mcp admin mode listening on port ${config.port}. ${startUp}`);
   return server;
 }
 
 const config = configOrExit();
-const server = config.admin
-  ? await startAdmin(config.admin, config.port)
-  : await startReadOnly(config);
+const server = config.admin ? await startAdmin(config, config.admin) : await startReadOnly(config);
 
 // Docker sends SIGTERM to stop a container: finish cleanly rather than being killed.
 process.on("SIGTERM", () => {

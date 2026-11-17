@@ -91,6 +91,8 @@ and error, and the author's downloads all come through them.
 
 13. Removes one queue item, adds its release to the app's blocklist and asks the app to search for a replacement.
     The result names the release that was blocklisted. The downloaded files are removed from the download client.
+    Refuses, changing nothing, a download whose files have already arrived (import blocked or pending, importing,
+    completed), pointing to `manual_import`, unless told to discard them: retrying would throw them away.
 
 **`manual_import`**
 

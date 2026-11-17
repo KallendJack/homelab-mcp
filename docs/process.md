@@ -196,3 +196,9 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   only the first 100 records were read, so a big pack could push later downloads out (now every page, up to 1,000);
   a pack still waiting to start has no download id, so it's grouped by release name, and a pack shows its worst
   episode's state; and rounding could show an unfinished download at 100%.
+- **2026-11-17**: Ticket 20 (#42), `retry_download`, the first media Action. The admin container now builds the
+  Sonarr and Radarr Sources from the same settings as the read-only one, and its start-up line names the media Sources
+  that are on. The HTTP helper gained DELETE beside POST. One guard beyond the spec: a download whose files have
+  already arrived (a 30 GB pack that only failed to import) is refused, pointing to `manual_import`, unless the
+  Client says to discard it, since retrying deletes the files from the download client. A season pack is found by
+  any of its episodes' queue ids.
