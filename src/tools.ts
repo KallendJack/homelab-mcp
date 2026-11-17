@@ -1,9 +1,11 @@
 import { z } from "zod";
 import { humanBytes } from "./bytes.ts";
 import { closestNames } from "./closest-names.ts";
+import { downloadQueue } from "./download-queue.ts";
 import { formatReport } from "./read-report.ts";
 import { formatRecentMedia, recentMediaInput } from "./recent-media.ts";
 import { Refusal } from "./refusal.ts";
+import type { Arr } from "./sources/arr.ts";
 import type { Disk, DiskFailure, DiskUsage } from "./sources/disk.ts";
 import { CONTAINER_NAME, type Container, type Docker } from "./sources/docker.ts";
 import type { Gatus, HealthCheck, HealthCheckResult } from "./sources/gatus.ts";
@@ -29,6 +31,8 @@ export type Sources = {
   /** Optional: off unless configured, and its Tool isn't offered while off (ADR 0001). */
   gatus?: Gatus;
   jellyfin?: Jellyfin;
+  sonarr?: Arr;
+  radarr?: Arr;
   report?: ReportSource;
 };
 
@@ -101,8 +105,9 @@ export function buildTools(sources: Sources, options: ToolOptions): Tool[] {
 }
 
 /** The Tools of optional Sources, each only when its Source is on. */
-function optionalTools({ gatus, jellyfin, report }: Sources): Tool[] {
+function optionalTools({ gatus, jellyfin, sonarr, radarr, report }: Sources): Tool[] {
   const tools: Tool[] = [];
+  const arrs = [sonarr, radarr].filter((a): a is Arr => a !== undefined);
   if (gatus) {
     tools.push({
       name: "list_health_checks",
@@ -126,6 +131,18 @@ function optionalTools({ gatus, jellyfin, report }: Sources): Tool[] {
         const { days = 1 } = recentMediaInput.parse(args);
         return formatRecentMedia(await jellyfin.recentMedia(days), days);
       },
+    });
+  }
+  if (arrs.length > 0) {
+    tools.push({
+      name: "download_queue",
+      description:
+        "Lists the homelab host's download queue from Sonarr (TV) and Radarr (films), problems first: failed, " +
+        "import blocked or pending, and stalled downloads, each with the app's own message, then what's still " +
+        "downloading with its progress. Each line starts with the app and its queue id. Use it to find a stuck or " +
+        "failed download.",
+      inputSchema: {},
+      handler: async () => downloadQueue(arrs),
     });
   }
   if (report) {

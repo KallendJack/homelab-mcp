@@ -58,6 +58,40 @@ describe("loadConfig", () => {
     expect(error.message).not.toContain("secret-api-key-value");
   });
 
+  it("turns Sonarr and Radarr on each with its URL and API key, and leaves them off with neither", () => {
+    const off = loadConfig({ MCP_TOKEN: token, SONARR_URL: "", SONARR_API_KEY: "" });
+    expect(off.sonarr).toBeUndefined();
+    expect(off.radarr).toBeUndefined();
+    const config = loadConfig({
+      MCP_TOKEN: token,
+      SONARR_URL: "http://sonarr.example:8989",
+      SONARR_API_KEY: "test-sonarr-key",
+      RADARR_URL: "http://radarr.example:7878",
+      RADARR_API_KEY: "test-radarr-key",
+    });
+    expect(config.sonarr).toEqual({ url: "http://sonarr.example:8989", apiKey: "test-sonarr-key" });
+    expect(config.radarr).toEqual({ url: "http://radarr.example:7878", apiKey: "test-radarr-key" });
+    expect(sourcesOn(config)).toBe("Docker, Disk (root), Sonarr, Radarr");
+  });
+
+  it.each([
+    [{ SONARR_URL: "http://sonarr.example:8989" }, "SONARR_URL and SONARR_API_KEY"],
+    [{ SONARR_API_KEY: "secret-api-key-value" }, "SONARR_URL and SONARR_API_KEY"],
+    [{ RADARR_URL: "http://radarr.example:7878" }, "RADARR_URL and RADARR_API_KEY"],
+    [{ RADARR_API_KEY: "secret-api-key-value" }, "RADARR_URL and RADARR_API_KEY"],
+  ])("refuses half of a Sonarr or Radarr pair, never echoing the key (%o)", (settings, pair) => {
+    const error = catchError(() => loadConfig({ MCP_TOKEN: token, ...settings }));
+    expect(error.message).toBe(`${pair} must be set together, or neither`);
+    expect(error.message).not.toContain("secret-api-key-value");
+  });
+
+  it("refuses a Sonarr or Radarr URL that isn't http or https", () => {
+    const error = catchError(() =>
+      loadConfig({ MCP_TOKEN: token, RADARR_URL: "ftp://radarr.example", RADARR_API_KEY: "k" }),
+    );
+    expect(error.message).toBe("RADARR_URL must be an http:// or https:// address");
+  });
+
   it("turns the Report on with REPORT_PATH, allowing 26 hours before it's stale unless told otherwise", () => {
     expect(loadConfig({ MCP_TOKEN: token }).report).toBeUndefined();
     expect(loadConfig({ MCP_TOKEN: token, REPORT_PATH: "" }).report).toBeUndefined();

@@ -1,0 +1,44 @@
+{
+  "page": 1,
+  "pageSize": 100,
+  "sortKey": "timeleft",
+  "sortDirection": "descending",
+  "totalRecords": 2,
+  "records": [
+    {
+      "id": 201,
+      "movieId": 31,
+      "movie": { "id": 31, "title": "Example Film", "year": 2025 },
+      "size": 8000000000,
+      "title": "Example.Film.2025.2160p.WEB.h265-GROUP",
+      "sizeleft": 2000000000,
+      "status": "downloading",
+      "trackedDownloadStatus": "ok",
+      "trackedDownloadState": "downloading",
+      "statusMessages": [],
+      "downloadId": "FFFF6666FFFF6666FFFF6666FFFF6666FFFF6666",
+      "protocol": "torrent",
+      "downloadClient": "qBittorrent"
+    },
+    {
+      "id": 202,
+      "movieId": 32,
+      "movie": { "id": 32, "title": "Second Film", "year": 2019 },
+      "size": 4000000000,
+      "title": "Second.Film.2019.1080p.BluRay.x264-OTHER",
+      "sizeleft": 0,
+      "status": "completed",
+      "trackedDownloadStatus": "warning",
+      "trackedDownloadState": "importBlocked",
+      "statusMessages": [
+        {
+          "title": "Second.Film.2019.1080p.BluRay.x264-OTHER",
+          "messages": ["No files found are eligible for import"]
+        }
+      ],
+      "downloadId": "1111AAAA1111AAAA1111AAAA1111AAAA1111AAAA",
+      "protocol": "torrent",
+      "downloadClient": "qBittorrent"
+    }
+  ]
+}

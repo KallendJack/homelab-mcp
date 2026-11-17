@@ -1,0 +1,175 @@
+{
+  "page": 1,
+  "pageSize": 100,
+  "sortKey": "timeleft",
+  "sortDirection": "descending",
+  "totalRecords": 6,
+  "records": [
+    {
+      "id": 101,
+      "seriesId": 7,
+      "episodeId": 701,
+      "seasonNumber": 2,
+      "series": {
+        "id": 7,
+        "title": "Example Show"
+      },
+      "episode": {
+        "id": 701,
+        "seasonNumber": 2,
+        "episodeNumber": 3,
+        "title": "The Third One"
+      },
+      "size": 2000000000,
+      "title": "Example.Show.S02E03.1080p.WEB.h264-GROUP",
+      "sizeleft": 1160000000,
+      "timeleft": "00:20:00",
+      "status": "downloading",
+      "trackedDownloadStatus": "ok",
+      "trackedDownloadState": "downloading",
+      "statusMessages": [],
+      "downloadId": "AAAA1111AAAA1111AAAA1111AAAA1111AAAA1111",
+      "protocol": "torrent",
+      "downloadClient": "qBittorrent"
+    },
+    {
+      "id": 102,
+      "seriesId": 8,
+      "episodeId": 801,
+      "seasonNumber": 1,
+      "series": {
+        "id": 8,
+        "title": "Second Show"
+      },
+      "episode": {
+        "id": 801,
+        "seasonNumber": 1,
+        "episodeNumber": 10,
+        "title": "Ten"
+      },
+      "size": 1500000000,
+      "title": "Second.Show.S01E10.720p.HDTV.x264-OTHER",
+      "sizeleft": 1320000000,
+      "status": "warning",
+      "trackedDownloadStatus": "warning",
+      "trackedDownloadState": "downloading",
+      "statusMessages": [
+        {
+          "title": "Second.Show.S01E10.720p.HDTV.x264-OTHER",
+          "messages": ["The download is stalled with no connections"]
+        }
+      ],
+      "downloadId": "BBBB2222BBBB2222BBBB2222BBBB2222BBBB2222",
+      "protocol": "torrent",
+      "downloadClient": "qBittorrent"
+    },
+    {
+      "id": 103,
+      "seriesId": 9,
+      "episodeId": 901,
+      "seasonNumber": 1,
+      "series": {
+        "id": 9,
+        "title": "Pack Show"
+      },
+      "episode": {
+        "id": 901,
+        "seasonNumber": 1,
+        "episodeNumber": 1,
+        "title": "Pilot"
+      },
+      "size": 30000000000,
+      "title": "Pack.Show.S01-S03.1080p.BluRay.x265-PACK",
+      "sizeleft": 0,
+      "status": "completed",
+      "trackedDownloadStatus": "warning",
+      "trackedDownloadState": "importBlocked",
+      "statusMessages": [
+        {
+          "title": "Pack.Show.S01-S03.1080p.BluRay.x265-PACK",
+          "messages": [
+            "Found matching series via grab history, but release was matched to series by ID. Automatic import is not possible."
+          ]
+        }
+      ],
+      "downloadId": "CCCC3333CCCC3333CCCC3333CCCC3333CCCC3333",
+      "protocol": "torrent",
+      "downloadClient": "qBittorrent",
+      "outputPath": "/data/downloads/tv/Pack.Show.S01-S03.1080p.BluRay.x265-PACK"
+    },
+    {
+      "id": 106,
+      "seriesId": 9,
+      "episodeId": 902,
+      "seasonNumber": 1,
+      "series": {
+        "id": 9,
+        "title": "Pack Show"
+      },
+      "episode": {
+        "id": 902,
+        "seasonNumber": 1,
+        "episodeNumber": 2,
+        "title": "Second"
+      },
+      "size": 30000000000,
+      "title": "Pack.Show.S01-S03.1080p.BluRay.x265-PACK",
+      "sizeleft": 0,
+      "status": "completed",
+      "trackedDownloadStatus": "warning",
+      "trackedDownloadState": "importBlocked",
+      "statusMessages": [
+        {
+          "title": "Pack.Show.S01-S03.1080p.BluRay.x265-PACK",
+          "messages": [
+            "Found matching series via grab history, but release was matched to series by ID. Automatic import is not possible."
+          ]
+        }
+      ],
+      "downloadId": "CCCC3333CCCC3333CCCC3333CCCC3333CCCC3333",
+      "protocol": "torrent",
+      "downloadClient": "qBittorrent",
+      "outputPath": "/data/downloads/tv/Pack.Show.S01-S03.1080p.BluRay.x265-PACK"
+    },
+    {
+      "id": 104,
+      "seriesId": 10,
+      "episodeId": 1001,
+      "seasonNumber": 4,
+      "series": {
+        "id": 10,
+        "title": "Broken Show"
+      },
+      "episode": {
+        "id": 1001,
+        "seasonNumber": 4,
+        "episodeNumber": 1,
+        "title": "Opener"
+      },
+      "size": 900000000,
+      "title": "Broken.Show.S04E01.1080p.WEB.h264-BAD",
+      "sizeleft": 900000000,
+      "status": "failed",
+      "trackedDownloadStatus": "error",
+      "trackedDownloadState": "failedPending",
+      "statusMessages": [],
+      "errorMessage": "The download is missing files",
+      "downloadId": "DDDD4444DDDD4444DDDD4444DDDD4444DDDD4444",
+      "protocol": "torrent",
+      "downloadClient": "qBittorrent"
+    },
+    {
+      "id": 105,
+      "title": "Mystery.Release.2026.1080p.WEB.h264-NOBODY",
+      "size": 700000000,
+      "sizeleft": 0,
+      "status": "completed",
+      "trackedDownloadStatus": "ok",
+      "trackedDownloadState": "importPending",
+      "statusMessages": [],
+      "downloadId": "EEEE5555EEEE5555EEEE5555EEEE5555EEEE5555",
+      "protocol": "torrent",
+      "downloadClient": "qBittorrent"
+    }
+  ]
+}
