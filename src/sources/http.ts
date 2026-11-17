@@ -12,8 +12,12 @@ export type HttpRequests = {
    * A body-less POST to `path`; the Allowlist owns its time limit. Any status comes back, since for an Action a status such as
    * 304 or 404 is an answer to word, not a failure; only not getting an answer is a SourceError.
    */
-  post(path: string, body?: PostBody): Promise<{ status: number; bytes: Uint8Array; text: string }>;
+  post(path: string, body?: PostBody): Promise<WriteAnswer>;
+  /** A DELETE to `path`, answered as `post` is: any status comes back. */
+  delete(path: string, body?: PostBody): Promise<WriteAnswer>;
 };
+
+export type WriteAnswer = { status: number; bytes: Uint8Array; text: string };
 
 /**
  * What a POST sends: `json` as JSON or `text` as it is, extra `headers`, and `timeLimited` for a request that may
@@ -81,7 +85,7 @@ export function httpRequests(
     return new SourceError(`Couldn't reach ${system}${code ? ` (${code})` : ""}.`);
   }
 
-  async function post(path: string, body: PostBody = {}) {
+  async function write(method: "POST" | "DELETE", path: string, body: PostBody = {}) {
     // A write to Docker isn't aborted on the time limit: Docker may still be changing the Host.
     // The Allowlist reports its deadline while holding the lock until this request settles.
     const signal = body.timeLimited ? AbortSignal.timeout(TIME_LIMIT_SECONDS * 1000) : undefined;
@@ -92,7 +96,7 @@ export function httpRequests(
     let response: Response;
     try {
       response = await fetch(`${baseUrl}${path}`, {
-        method: "POST",
+        method,
         headers: { ...headers, ...content.type, ...body.headers },
         ...(content.body !== undefined ? { body: content.body } : {}),
         ...(signal ? { signal } : {}),
@@ -109,7 +113,12 @@ export function httpRequests(
     }
   }
 
-  return { get, getJson, post };
+  return {
+    get,
+    getJson,
+    post: (path, body) => write("POST", path, body),
+    delete: (path, body) => write("DELETE", path, body),
+  };
 }
 
 function isTimeout(error: unknown): boolean {

@@ -106,8 +106,9 @@ Then ask things like "is anything unhealthy on the homelab?" or "why did the med
 ### 4. Admin mode (optional)
 
 Admin mode is a **second container from the same image** that can make a few specific changes to the Host: pull the
-config repo, preview and recreate one Service, start a stopped Container, reload the reverse proxy. Its Tools and
-what each refuses are in [`docs/spec-phase-2.md`](docs/spec-phase-2.md). It holds Docker's real socket, which is as
+config repo, preview and recreate one Service, start a stopped Container, reload the reverse proxy, and, with
+Sonarr or Radarr configured, retry a stuck download. Its Tools and what each refuses are in
+[`docs/spec-phase-2.md`](docs/spec-phase-2.md) and [`docs/spec-phase-3.md`](docs/spec-phase-3.md). It holds Docker's real socket, which is as
 powerful as root on the Host, so keep the read-only server for everyday questions and give this one only to a Client
 that asks before each Action.
 
@@ -129,6 +130,9 @@ services:
       ADMIN_PROXY_RELOAD_COMMAND: caddy reload --config /etc/caddy/Caddyfile
       NTFY_URL: https://ntfy.sh
       NTFY_TOPIC: ${NTFY_TOPIC:?}
+      # Optional: retry_download, with the same settings as the read-only server.
+      SONARR_URL: http://sonarr:8989
+      SONARR_API_KEY: ${SONARR_API_KEY:?}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /srv/stacks:/srv/stacks

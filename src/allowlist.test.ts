@@ -194,12 +194,19 @@ describe("adminStartUp", () => {
     ]);
     const line = adminStartUp("/host/stacks", tools, false);
     expect(line).toBe(
-      "Allowlist: pull_config, start_container. Config repo: /host/stacks. Notifications: off.",
+      "Allowlist: pull_config, start_container. Config repo: /host/stacks. Notifications: off. Media Sources: none.",
     );
-    expect(adminStartUp("/host/stacks", tools, true)).toMatch(/Notifications: on.$/);
+    expect(adminStartUp("/host/stacks", tools, true)).toMatch(/Notifications: on./);
   });
 
   it("says so when the Allowlist is empty", () => {
     expect(adminStartUp("/host/stacks", [], false)).toMatch(/^Allowlist: none\./);
+  });
+
+  it("names the media Sources that are on, and says none when none are", () => {
+    expect(adminStartUp("/host/stacks", [], false)).toMatch(/Media Sources: none\.$/);
+    expect(adminStartUp("/host/stacks", [], false, ["Sonarr", "Radarr"])).toMatch(
+      /Media Sources: Sonarr, Radarr\.$/,
+    );
   });
 });
