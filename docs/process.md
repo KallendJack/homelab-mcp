@@ -192,3 +192,7 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   are shown, or one pack would look like ten problems; and one app that can't be read is a sentence above the
   other's list rather than an error, since the other's problems are still worth seeing. The Host's queues were empty
   when recorded, so the problem cases are hand-written in the recorded shape.
+  Review caught four gaps: a download client that's down (`downloadClientUnavailable`) showed as downloading;
+  only the first 100 records were read, so a big pack could push later downloads out (now every page, up to 1,000);
+  a pack still waiting to start has no download id, so it's grouped by release name, and a pack shows its worst
+  episode's state; and rounding could show an unfinished download at 100%.

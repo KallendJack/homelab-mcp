@@ -4,28 +4,35 @@ import { httpRequests } from "./http.ts";
 /** Sonarr or Radarr: both speak the same v3 API, with series and episodes in one and films in the other. */
 export type ArrApp = "Sonarr" | "Radarr";
 
-/** What a Queue item is doing, from the app's own status and tracked state. */
-export type QueueState =
-  | "failed"
-  | "import blocked"
-  | "import pending"
-  | "stalled"
-  | "warning"
-  | "importing"
-  | "downloading"
-  | "queued"
-  | "paused"
-  | "completed";
+/** What a Queue item is doing, from the app's own status and tracked state, worst first. */
+export const QUEUE_STATES = [
+  "failed",
+  "download client unavailable",
+  "import blocked",
+  "import pending",
+  "stalled",
+  "warning",
+  "importing",
+  "downloading",
+  "queued",
+  "paused",
+  "completed",
+  "ignored",
+] as const;
+export type QueueState = (typeof QUEUE_STATES)[number];
+
+/** The states that need a person, or at least a look. */
+export const PROBLEM_STATES: readonly QueueState[] = QUEUE_STATES.slice(0, 6);
 
 /** One download the app is tracking. A season pack is one download, even though the app lists each episode. */
 export type QueueItem = {
   app: ArrApp;
-  /** The app's id for this download's first queue record, which the Actions take. */
+  /** The app's id for this download's worst queue record, which the Actions take. */
   id: number;
   /** "Example Show S02E03", "Pack Show, 2 episodes", "Example Film (2025)", or the release name when unmatched. */
   title: string;
   state: QueueState;
-  /** Percent downloaded, while it's still downloading. */
+  /** Percent downloaded, while it's still downloading. Never 100 until it's finished. */
   progress?: number;
   /** The app's own warning or error, as it words it. */
   message?: string;
@@ -33,8 +40,8 @@ export type QueueItem = {
 
 export type Queue = {
   items: QueueItem[];
-  /** How many queue records the app has in total, when more than were read. */
-  total?: number;
+  /** Set when fewer records could be read than the app says it has. */
+  shortOf?: { read: number; total: number };
 };
 
 export type Arr = {
@@ -42,8 +49,9 @@ export type Arr = {
   queue(): Promise<Queue>;
 };
 
-/** How many queue records are read: a home queue rarely holds more, and more are said to exist. */
-export const QUEUE_PAGE_SIZE = 100;
+const PAGE_SIZE = 100;
+/** Enough for a queue full of season packs; a queue longer than this is said to be read in part. */
+const MAX_PAGES = 10;
 
 const record = z.object({
   id: z.number(),
@@ -75,41 +83,64 @@ export function arr(fetch: typeof globalThis.fetch, url: string, apiKey: string,
   return {
     app,
     async queue() {
-      const { totalRecords, records } = await getJson(
-        `/api/v3/queue?page=1&pageSize=${QUEUE_PAGE_SIZE}&${include}`,
-        page,
-      );
+      // Every page, so the downloads on later pages are counted: a season pack is one record per episode.
+      const records: QueueRecord[] = [];
+      let total = 0;
+      for (let n = 1; n <= MAX_PAGES; n++) {
+        const answer = await getJson(
+          `/api/v3/queue?page=${n}&pageSize=${PAGE_SIZE}&${include}`,
+          page,
+        );
+        total = answer.totalRecords;
+        records.push(...answer.records);
+        if (answer.records.length === 0 || records.length >= total) break;
+      }
       return {
         items: downloads(records).map((group) => queueItem(app, group)),
-        ...(totalRecords > records.length ? { total: totalRecords } : {}),
+        ...(records.length < total ? { shortOf: { read: records.length, total } } : {}),
       };
     },
   };
 }
 
-/** Records grouped by download, in the app's order: a season pack has one record per episode. */
+/**
+ * Records grouped by download, in the app's order. A season pack has one record per episode, sharing a download
+ * id; one still waiting to start has none yet, so its release name stands in.
+ */
 function downloads(records: QueueRecord[]): QueueRecord[][] {
   const groups = new Map<string, QueueRecord[]>();
   for (const r of records) {
-    const key = r.downloadId ?? `record-${r.id}`;
+    const key = r.downloadId
+      ? `download:${r.downloadId}`
+      : r.title
+        ? `release:${r.title}`
+        : `record:${r.id}`;
     groups.set(key, [...(groups.get(key) ?? []), r]);
   }
   return [...groups.values()];
 }
 
+const rank = (state: QueueState) => QUEUE_STATES.indexOf(state);
+
 function queueItem(app: ArrApp, group: QueueRecord[]): QueueItem {
-  const [first] = group as [QueueRecord, ...QueueRecord[]];
-  const state = stateOf(first);
-  const message = messageOf(first);
-  const downloading = ["stalled", "warning", "downloading", "queued", "paused"].includes(state);
-  const { size, sizeleft } = first;
+  // The worst episode speaks for the pack: one blocked import is the problem, even if the rest are fine.
+  const [worst] = [...group].sort((a, b) => rank(stateOf(a)) - rank(stateOf(b))) as [
+    QueueRecord,
+    ...QueueRecord[],
+  ];
+  const state = stateOf(worst);
+  const message = messageOf(worst);
+  const downloading = (
+    ["download client unavailable", "stalled", "warning", "downloading", "paused"] as QueueState[]
+  ).includes(state);
+  const { size, sizeleft } = worst;
   const progress =
     downloading && size && size > 0 && sizeleft !== undefined
-      ? Math.round((1 - sizeleft / size) * 100)
+      ? Math.floor(((size - sizeleft) * 100) / size)
       : undefined;
   return {
     app,
-    id: first.id,
+    id: worst.id,
     title: titleOf(group),
     state,
     ...(progress !== undefined ? { progress } : {}),
@@ -121,6 +152,8 @@ function stateOf(r: QueueRecord): QueueState {
   const tracked = r.trackedDownloadState;
   if (tracked === "failed" || tracked === "failedPending" || r.status === "failed") return "failed";
   if (r.trackedDownloadStatus === "error") return "failed";
+  if (r.status === "downloadClientUnavailable") return "download client unavailable";
+  if (tracked === "ignored") return "ignored";
   if (tracked === "importBlocked") return "import blocked";
   if (tracked === "importPending") return "import pending";
   if (tracked === "importing") return "importing";

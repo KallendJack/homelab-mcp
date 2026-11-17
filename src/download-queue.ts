@@ -1,28 +1,13 @@
 import {
   type Arr,
   type ArrApp,
-  QUEUE_PAGE_SIZE,
+  PROBLEM_STATES,
+  QUEUE_STATES,
   type Queue,
   type QueueItem,
-  type QueueState,
 } from "./sources/arr.ts";
 import { SourceError } from "./sources/source-error.ts";
 import { count, section } from "./wording.ts";
-
-/** Worst first: what needs a person, then what's waiting, then what's just downloading. */
-const RANK: Record<QueueState, number> = {
-  failed: 0,
-  "import blocked": 1,
-  "import pending": 2,
-  stalled: 3,
-  warning: 4,
-  importing: 5,
-  downloading: 6,
-  queued: 7,
-  paused: 8,
-  completed: 9,
-};
-const PROBLEMS: QueueState[] = ["failed", "import blocked", "import pending", "stalled", "warning"];
 
 type Read = { app: ArrApp; queue: Queue };
 type Unread = { app: ArrApp; error: SourceError };
@@ -46,11 +31,9 @@ export async function downloadQueue(apps: Arr[]): Promise<string> {
   const items = read.flatMap((r) => r.queue.items);
   const notes = [
     ...failed.map((f) => `${f.app} couldn't be read: ${f.error.message}`),
-    ...read.flatMap((r) =>
-      r.queue.total
-        ? [
-            `Only the first ${QUEUE_PAGE_SIZE} of ${r.queue.total} ${r.app} queue records were read.`,
-          ]
+    ...read.flatMap(({ app, queue: { shortOf } }) =>
+      shortOf
+        ? [`Only ${shortOf.read} of ${shortOf.total} ${app} queue records could be read.`]
         : [],
     ),
   ];
@@ -60,14 +43,16 @@ export async function downloadQueue(apps: Arr[]): Promise<string> {
   }
 
   const order = (a: QueueItem, b: QueueItem) =>
-    RANK[a.state] - RANK[b.state] || a.app.localeCompare(b.app) || a.title.localeCompare(b.title);
-  const problems = items.filter((i) => PROBLEMS.includes(i.state)).sort(order);
-  const others = items.filter((i) => !PROBLEMS.includes(i.state)).sort(order);
+    QUEUE_STATES.indexOf(a.state) - QUEUE_STATES.indexOf(b.state) ||
+    a.app.localeCompare(b.app) ||
+    a.title.localeCompare(b.title);
+  const problems = items.filter((i) => PROBLEM_STATES.includes(i.state)).sort(order);
+  const others = items.filter((i) => !PROBLEM_STATES.includes(i.state)).sort(order);
   return [
     `${count(items.length, "download")} in the queue, ${problems.length} with problems.`,
     ...notes,
     ...section("Problems:", problems, line),
-    ...section("Downloading:", others, line),
+    ...section("Downloading or waiting:", others, line),
   ].join("\n");
 }
 

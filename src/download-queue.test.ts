@@ -64,7 +64,7 @@ describe("download_queue", () => {
         "- Sonarr 105: Mystery.Release.2026.1080p.WEB.h264-NOBODY, import pending",
         "- Sonarr 102: Second Show S01E10, stalled, 12%: The download is stalled with no connections",
         "",
-        "Downloading:",
+        "Downloading or waiting:",
         "- Radarr 201: Example Film (2025), 75%",
         "- Sonarr 101: Example Show S02E03, 42%",
       ].join("\n"),
@@ -132,17 +132,127 @@ describe("download_queue", () => {
     );
   });
 
-  it("says when a queue has more downloads than were read", async () => {
-    const big = JSON.parse(new TextDecoder().decode(fixture("radarr/queue.json").body));
-    big.totalRecords = 150;
+  const radarrPage = (n: number) =>
+    `${radarrUrl}/api/v3/queue?page=${n}&pageSize=100&includeUnknownMovieItems=true&includeMovie=true`;
+  const page = (totalRecords: number, records: object[]) => ({
+    body: JSON.stringify({ totalRecords, records }),
+  });
+  const film = (id: number, extra: object) => ({
+    id,
+    movie: { title: `Film ${id}`, year: 2020 },
+    size: 1000,
+    sizeleft: 500,
+    status: "downloading",
+    trackedDownloadStatus: "ok",
+    trackedDownloadState: "downloading",
+    downloadId: `D${id}`,
+    ...extra,
+  });
+
+  it("reads every page of a long queue, so a big season pack can't push other downloads out", async () => {
     const { tool } = downloadQueue(
-      { [radarrQueue]: { body: JSON.stringify(big) } },
+      {
+        [radarrPage(1)]: page(3, [film(1, {}), film(2, {})]),
+        [radarrPage(2)]: page(3, [film(3, { status: "failed", trackedDownloadStatus: "error" })]),
+      },
       { radarr: true },
     );
 
-    expect(await tool.handler({})).toContain(
-      "Only the first 100 of 150 Radarr queue records were read.",
+    const text = await tool.handler({});
+    expect(text).toMatch(/^3 downloads in the queue, 1 with problems\./);
+    expect(text).toContain("- Radarr 3: Film 3 (2020), failed");
+  });
+
+  it("says when a queue stops answering pages before every record was read", async () => {
+    const { tool } = downloadQueue(
+      { [radarrPage(1)]: page(150, [film(1, {})]), [radarrPage(2)]: page(150, []) },
+      { radarr: true },
     );
+
+    expect(await tool.handler({})).toContain("Only 1 of 150 Radarr queue records could be read.");
+  });
+
+  it("shows a download client that's down as a problem, not as downloading", async () => {
+    const { tool } = downloadQueue(
+      {
+        [radarrPage(1)]: page(1, [
+          film(4, {
+            status: "downloadClientUnavailable",
+            statusMessages: [{ messages: ["Download client is unavailable"] }],
+          }),
+        ]),
+      },
+      { radarr: true },
+    );
+
+    expect(await tool.handler({})).toBe(
+      [
+        "1 download in the queue, 1 with problems.",
+        "",
+        "Problems:",
+        "- Radarr 4: Film 4 (2020), download client unavailable, 50%: Download client is unavailable",
+      ].join("\n"),
+    );
+  });
+
+  it("shows a season pack at its worst episode's state, and groups a delayed pack that has no download yet", async () => {
+    const episode = (id: number, extra: object) => ({
+      id,
+      series: { title: "Pack Show" },
+      episode: { seasonNumber: 1, episodeNumber: id },
+      title: "Pack.Show.S01.1080p-PACK",
+      size: 1000,
+      sizeleft: 0,
+      status: "completed",
+      trackedDownloadStatus: "ok",
+      trackedDownloadState: "importPending",
+      downloadId: "PACK",
+      ...extra,
+    });
+    const delayed = (id: number) => ({
+      id,
+      series: { title: "Later Show" },
+      episode: { seasonNumber: 2, episodeNumber: id },
+      title: "Later.Show.S02.1080p-LATE",
+      status: "delay",
+    });
+    const { tool } = downloadQueue(
+      {
+        [sonarrQueue]: page(5, [
+          episode(1, {}),
+          episode(2, {
+            trackedDownloadStatus: "warning",
+            trackedDownloadState: "importBlocked",
+            statusMessages: [{ messages: ["Episode file already imported"] }],
+          }),
+          episode(3, {}),
+          delayed(11),
+          delayed(12),
+        ]),
+      },
+      { sonarr: true },
+    );
+
+    expect(await tool.handler({})).toBe(
+      [
+        "2 downloads in the queue, 1 with problems.",
+        "",
+        "Problems:",
+        "- Sonarr 2: Pack Show, 3 episodes, import blocked: Episode file already imported",
+        "",
+        "Downloading or waiting:",
+        "- Sonarr 11: Later Show, 2 episodes, queued",
+      ].join("\n"),
+    );
+  });
+
+  it("never shows an unfinished download as 100%", async () => {
+    const { tool } = downloadQueue(
+      { [radarrPage(1)]: page(1, [film(5, { size: 1000, sizeleft: 1 })]) },
+      { radarr: true },
+    );
+
+    expect(await tool.handler({})).toContain("- Radarr 5: Film 5 (2020), 99%");
   });
 
   it("says an answer that isn't a queue is unexpected", async () => {
