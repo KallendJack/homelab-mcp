@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { Action } from "./allowlist.ts";
 import { Refusal } from "./refusal.ts";
-import type { Arr, QueueState } from "./sources/arr.ts";
+import type { Arr } from "./sources/arr.ts";
 
 const input = z.object({
   app: z
@@ -15,9 +15,6 @@ const input = z.object({
       "Set to true only to retry a download whose files have already arrived, throwing them away. Left out, such a download is refused",
     ),
 });
-
-/** States whose files are already downloaded: retrying throws them away, so it needs saying twice. */
-const DOWNLOADED: QueueState[] = ["import blocked", "import pending", "importing", "completed"];
 
 /**
  * Gives up on one download and gets another: the app removes it from its queue and the download client,
@@ -43,7 +40,13 @@ export function retryDownload(apps: Arr[]): Action {
           `${name}'s queue has no download ${id}. download_queue shows each one's id.`,
         );
       }
-      if (DOWNLOADED.includes(item.state) && !discard) {
+      if (item.waiting) {
+        throw new Refusal(
+          `${item.title} hasn't started downloading yet (it's waiting for ${name}'s delay), so there's nothing to retry.`,
+        );
+      }
+      // Retrying deletes the files from the download client, so a finished download needs saying twice.
+      if (item.downloaded && !discard) {
         throw new Refusal(
           `${item.title} has finished downloading (${item.state}), so retrying would throw its files away. ` +
             "Try manual_import first, or call again with discard_downloaded set to true.",
@@ -56,9 +59,15 @@ export function retryDownload(apps: Arr[]): Action {
       const release = item.release && item.release !== item.title ? `, ${item.release}` : "";
       const removed = `Removed ${item.title} from ${name}'s queue and the download client, and blocklisted its release${release}.`;
       const kind = name === "Sonarr" ? "a series" : "a film";
-      return item.matched
+      if (!item.matched) {
+        return `${removed} It isn't matched to ${kind}, so ${name} won't search for a replacement.`;
+      }
+      const searches = await app.redownloadsFailed();
+      if (searches === undefined)
+        return `${removed} ${name} was asked to search for a replacement.`;
+      return searches
         ? `${removed} ${name} is searching for a replacement.`
-        : `${removed} It isn't matched to ${kind}, so ${name} won't search for a replacement.`;
+        : `${removed} ${name}'s Redownload Failed setting is off, so it won't search for a replacement by itself.`;
     },
   };
 }

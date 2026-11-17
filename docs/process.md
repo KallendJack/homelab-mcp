@@ -201,4 +201,7 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   that are on. The HTTP helper gained DELETE beside POST. One guard beyond the spec: a download whose files have
   already arrived (a 30 GB pack that only failed to import) is refused, pointing to `manual_import`, unless the
   Client says to discard it, since retrying deletes the files from the download client. A season pack is found by
-  any of its episodes' queue ids.
+  any of its episodes' queue ids. Review caught wording that claimed too much: the app only searches again with its
+  Redownload Failed setting on, so that's read and said; a download still waiting for the app's delay never reached
+  the download client, so it's refused as nothing to retry; the delete isn't cut off at the 10-second Source limit,
+  since deleting a big pack can take longer; and a pack counts as downloaded if any of its episodes has arrived.
