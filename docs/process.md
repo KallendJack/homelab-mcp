@@ -181,3 +181,8 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   to ticket 18. With 0.2.1, `pull_config`, `preview_service`, `recreate_service` and `reload_proxy` all worked
   for real. `start_container` is left for the next Container that doesn't come back by itself, rather than stopping
   one on purpose.
+- **2026-11-17**: Phase 3 spec ([`spec-phase-3.md`](spec-phase-3.md)): media and live TV, scoped to the jobs the
+  author picked (stuck downloads, manual import, requests by name, and four live TV jobs). Built here rather than with
+  a community *arr MCP server: those offer 50-80 Tools including deletes, would hold the apps' admin keys in outside
+  code, and none covers Dispatcharr. Designed against the live Dispatcharr 0.33 and Teamarr 2.25 OpenAPI schemas.
+  `check_stream` is an Action, not a read, because playing a channel takes one of the provider's connections.
