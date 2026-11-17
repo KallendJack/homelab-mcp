@@ -2,6 +2,7 @@ import { z } from "zod";
 import { humanBytes } from "./bytes.ts";
 import { closestNames } from "./closest-names.ts";
 import { downloadQueue } from "./download-queue.ts";
+import { importCandidates } from "./manual-import.ts";
 import { formatReport } from "./read-report.ts";
 import { formatRecentMedia, recentMediaInput } from "./recent-media.ts";
 import { Refusal } from "./refusal.ts";
@@ -134,6 +135,7 @@ function optionalTools({ gatus, jellyfin, sonarr, radarr, report }: Sources): To
     });
   }
   if (arrs.length > 0) {
+    tools.push(importCandidates(arrs));
     tools.push({
       name: "download_queue",
       description:

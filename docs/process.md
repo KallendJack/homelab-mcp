@@ -205,3 +205,5 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   Redownload Failed setting on, so that's read and said; a download still waiting for the app's delay never reached
   the download client, so it's refused as nothing to retry; the delete isn't cut off at the 10-second Source limit,
   since deleting a big pack can take longer; and a pack counts as downloaded if any of its episodes has arrived.
+- **2026-11-17**: Ticket 21 (#43), manual import preview and Action. Jack approved importing matched files and listing rejected or unmatched files, replacing the original all-or-nothing refusal. Tests use scrubbed Sonarr and Radarr fixtures. Regression testing caught quality IDs and resolution being stripped before submission; the nested quality data is now preserved. No live import was performed.
+  Review also caught test-only polling parameters, missing quality and skip details, and misleading episode ranges. Polling is now tested with fake timers, reports retain skip details on failure, and exact episode codes are listed. Completion wording reports the command outcome without claiming every file arrived.

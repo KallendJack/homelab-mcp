@@ -1,5 +1,6 @@
 import { adminStartUp, allowlist } from "./allowlist.ts";
 import { type AdminConfig, type Config, ConfigError, loadConfig, sourcesOn } from "./config.ts";
+import { manualImport } from "./manual-import.ts";
 import { pullConfig } from "./pull-config.ts";
 import { previewService, recreateService } from "./recreate-service.ts";
 import { reloadProxy } from "./reload-proxy.ts";
@@ -84,7 +85,7 @@ async function startAdmin(config: Config, admin: AdminConfig): Promise<RunningSe
       startContainer(host),
       // Offered only when configured, as an optional Source's Tool is.
       ...(admin.proxy ? [reloadProxy(host, admin.proxy)] : []),
-      ...(arrs.length > 0 ? [retryDownload(arrs)] : []),
+      ...(arrs.length > 0 ? [retryDownload(arrs), manualImport(arrs)] : []),
     ],
     notifier ? { notifier } : {},
   );

@@ -1,13 +1,11 @@
 import { z } from "zod";
 import type { Action } from "./allowlist.ts";
+import { downloadInput, findDownload } from "./queue-lookup.ts";
 import { Refusal } from "./refusal.ts";
 import type { Arr } from "./sources/arr.ts";
 
 const input = z.object({
-  app: z
-    .enum(["Sonarr", "Radarr"])
-    .describe("Which app's queue the download is in, as download_queue shows"),
-  id: z.number().int().positive().describe("The download's queue id, as download_queue shows it"),
+  ...downloadInput,
   discard_downloaded: z
     .boolean()
     .optional()
@@ -31,15 +29,7 @@ export function retryDownload(apps: Arr[]): Action {
     inputSchema: input.shape,
     async handler(args) {
       const { app: name, id, discard_downloaded: discard = false } = input.parse(args);
-      const app = apps.find((a) => a.app === name);
-      if (!app) throw new Refusal(`${name} isn't configured on this server.`);
-
-      const item = (await app.queue()).items.find((i) => i.recordIds.includes(id));
-      if (!item) {
-        throw new Refusal(
-          `${name}'s queue has no download ${id}. download_queue shows each one's id.`,
-        );
-      }
+      const { app, item } = await findDownload(apps, name, id);
       if (item.waiting) {
         throw new Refusal(
           `${item.title} hasn't started downloading yet (it's waiting for ${name}'s delay), so there's nothing to retry.`,
