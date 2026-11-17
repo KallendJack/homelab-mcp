@@ -55,6 +55,22 @@ A Report older than its schedule allows, so it may no longer describe the Host. 
 saying how old it is.
 _Avoid_: old, outdated, expired
 
+**Queue item**:
+One download Sonarr or Radarr is tracking, from grabbed to imported, with its state and any warning.
+_Avoid_: torrent, job, task
+
+**Channel**:
+A live TV channel in Dispatcharr, with a number, a name and guide data, played from one of its Streams.
+_Avoid_: station, feed
+
+**Stream**:
+One provider's source for a Channel. A Channel holds several in priority order and plays the first that works.
+_Avoid_: link, URL, source (that's a system the server reads)
+
+**Guide**:
+The TV listings (EPG) a Channel is linked to, from Dispatcharr's EPG sources or built by Teamarr for games.
+_Avoid_: EPG data, schedule, listings
+
 ### Safety
 
 **Secret**:
