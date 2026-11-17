@@ -1,6 +1,6 @@
 # Phase 3 spec: media and live TV
 
-What phase 3 adds, in behaviour a test can check. Terms are from [`CONTEXT.md`](../CONTEXT.md). Phases 1 and 2 are
+What phase 3 adds, in behaviour a test can check. Terms are from [`GLOSSARY.md`](../GLOSSARY.md). Phases 1 and 2 are
 unchanged: the read-only container offers read Tools, the admin container offers only the Allowlist, and every
 Action is approved by the person in the Client.
 

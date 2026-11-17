@@ -15,5 +15,6 @@
     "erasableSyntaxOnly": true,
     "resolveJsonModule": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "extends": "./tsconfig.house.json"
 }

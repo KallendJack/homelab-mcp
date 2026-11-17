@@ -1,6 +1,6 @@
 # Architecture
 
-How homelab-mcp is put together. The vocabulary is in [CONTEXT.md](../CONTEXT.md); the big decisions are in
+How homelab-mcp is put together. The vocabulary is in [GLOSSARY.md](../GLOSSARY.md); the big decisions are in
 [adr/](adr/).
 
 ## Stack

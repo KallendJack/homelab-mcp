@@ -1,8 +1,27 @@
 # homelab-mcp
 
 An MCP server that lets an AI assistant read how a self-hosted Docker homelab is doing, with an optional admin mode for
-approved deploys. Read `CONTEXT.md` before
+approved deploys. Read `GLOSSARY.md` before
 naming anything, and use its terms (and avoid its _Avoid_ lists) in code, tests, Tool descriptions and commits.
+
+## House rules
+
+From `KallendJack/house`, `rules/base.md`. House version: 0.8.0, reviewed against Matt's skills 1.3.2.
+Change shared rules in House; keep project-specific rules below this section.
+
+- **Workflow:** use Matt Pocock's skills directly; `ask-matt` routes when unsure. His rules take precedence over
+  House. The owner chooses the work.
+- **Work tracking:** planned work and bugs live where `docs/agents/issue-tracker.md` says. Small incidental fixes
+  can go straight into a PR. Milestones group deliverable outcomes; blocking links express dependencies.
+- **Checks:** run the repo's checks before pushing. Fix failing CI before calling a PR ready; merge requires
+  green checks and review against the requested change.
+- **Docs:** `README.md` explains the project; `AGENTS.md` holds agent instructions; `CLAUDE.md` points to it.
+  Matt's setup owns the tracker and domain-document pointers in `docs/agents/`. Update docs with the change.
+- **Secrets:** values come from the environment, names from `.env.example`. Public examples and fixtures use
+  made-up data.
+- **Communication:** plain words, concise explanations, and evidence appropriate to the change.
+- **App code:** before writing or changing code, read `docs/agents/code.md`.
+- **Project rules** below add to these conventions and override House where explicitly stated.
 
 ## Commands
 
@@ -40,19 +59,20 @@ This repo is public, and the server exists to read a real Host, so these hold fo
 
 ## Workflow
 
-Tickets are GitHub Issues (`docs/agents/issue-tracker.md`).
+Use Matt's skills and the tracker conventions in `docs/agents/issue-tracker.md`.
+Keep explanations accessible to a reader learning the codebase. Record meaningful implementation lessons in
+`docs/process.md` when they add context beyond the issue and PR.
 
-- **One PR per ticket,** branched from `main`, never from another PR's branch.
-- **Test-first,** in small commits.
-- **Each PR description is written for Jack to learn from,** plain English first, in this order:
-  1. **What this does:** two to four sentences with no jargon. What can the server do now that it couldn't before?
-  2. **How it works:** one short paragraph per file, in reading order, in plain words.
-  3. **New terms in this PR:** at most four, one line each: what it means and why it's needed here. Any other
-     technical word either gets explained where it's used or moves to the technical section.
-  4. **How it was checked:** tests, trying it by hand, and what review caught, each in plain words.
-  5. **Technical detail:** inside a collapsed `<details>` block, the precise version for reference.
-  6. **Explain it back:** one question about the main idea, answerable from the plain sections above. A harder
-     question can go in the technical section as a stretch.
-- **Commit and PR attribution:** commits end with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`; PR
-  descriptions end with `🤖 Generated with [Claude Code](https://claude.com/claude-code)`.
-- **After each ticket,** add a dated entry to `docs/process.md`: what was built and anything review caught.
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Matt's five default labels. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `GLOSSARY.md` and `docs/adr/`. See `docs/agents/domain.md`.

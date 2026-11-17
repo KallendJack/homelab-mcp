@@ -1,6 +1,6 @@
 # Phase 1 spec: read-only
 
-What phase 1 does, in behaviour a test can check. Terms are from [`CONTEXT.md`](../CONTEXT.md); modules and config are
+What phase 1 does, in behaviour a test can check. Terms are from [`GLOSSARY.md`](../GLOSSARY.md); modules and config are
 in [`architecture.md`](architecture.md).
 
 ## Connecting
