@@ -14,6 +14,10 @@ export type Config = {
   gatusUrl?: string;
   /** Jellyfin's base URL and API key. Both set, they turn on the Jellyfin Source and its Tool. */
   jellyfin?: { url: string; apiKey: string };
+  /** Sonarr's base URL and API key. Both set, they turn on the Sonarr Source. */
+  sonarr?: { url: string; apiKey: string };
+  /** Radarr's base URL and API key. Both set, they turn on the Radarr Source. */
+  radarr?: { url: string; apiKey: string };
   /** The Report file and how old it may be before it's a Stale report. Set, it turns on the Report Source. */
   report?: { path: string; maxAgeHours: number };
   /** Set, the server runs in admin mode: it offers the Allowlist instead of the read Tools. */
@@ -129,6 +133,14 @@ const schema = z
       .url({ protocol: /^https?$/, error: "JELLYFIN_URL must be an http:// or https:// address" })
       .optional(),
     JELLYFIN_API_KEY: z.string().optional(),
+    SONARR_URL: z
+      .url({ protocol: /^https?$/, error: "SONARR_URL must be an http:// or https:// address" })
+      .optional(),
+    SONARR_API_KEY: z.string().optional(),
+    RADARR_URL: z
+      .url({ protocol: /^https?$/, error: "RADARR_URL must be an http:// or https:// address" })
+      .optional(),
+    RADARR_API_KEY: z.string().optional(),
     REPORT_PATH: z
       .string()
       .refine((path) => path.startsWith("/"), { error: "REPORT_PATH must be an absolute path" })
@@ -226,6 +238,12 @@ const schema = z
   .refine((env) => (env.JELLYFIN_URL === undefined) === (env.JELLYFIN_API_KEY === undefined), {
     error: "JELLYFIN_URL and JELLYFIN_API_KEY must be set together, or neither",
   })
+  .refine((env) => (env.SONARR_URL === undefined) === (env.SONARR_API_KEY === undefined), {
+    error: "SONARR_URL and SONARR_API_KEY must be set together, or neither",
+  })
+  .refine((env) => (env.RADARR_URL === undefined) === (env.RADARR_API_KEY === undefined), {
+    error: "RADARR_URL and RADARR_API_KEY must be set together, or neither",
+  })
   // A half-set pair stops the server, as a max age with nothing to apply it to would otherwise be ignored.
   .refine((env) => env.REPORT_MAX_AGE_HOURS === undefined || env.REPORT_PATH !== undefined, {
     error: "REPORT_MAX_AGE_HOURS only applies with REPORT_PATH set",
@@ -294,6 +312,12 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     ...(parsed.JELLYFIN_URL && parsed.JELLYFIN_API_KEY
       ? { jellyfin: { url: parsed.JELLYFIN_URL, apiKey: parsed.JELLYFIN_API_KEY } }
       : {}),
+    ...(parsed.SONARR_URL && parsed.SONARR_API_KEY
+      ? { sonarr: { url: parsed.SONARR_URL, apiKey: parsed.SONARR_API_KEY } }
+      : {}),
+    ...(parsed.RADARR_URL && parsed.RADARR_API_KEY
+      ? { radarr: { url: parsed.RADARR_URL, apiKey: parsed.RADARR_API_KEY } }
+      : {}),
     ...(parsed.REPORT_PATH
       ? {
           report: {
@@ -342,6 +366,8 @@ export function sourcesOn(config: Config): string {
     `Disk (${labels})`,
     ...(config.gatusUrl ? ["Gatus"] : []),
     ...(config.jellyfin ? ["Jellyfin"] : []),
+    ...(config.sonarr ? ["Sonarr"] : []),
+    ...(config.radarr ? ["Radarr"] : []),
     ...(config.report ? ["Report"] : []),
   ].join(", ");
 }

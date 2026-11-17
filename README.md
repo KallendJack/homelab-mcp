@@ -19,6 +19,7 @@ it was built in [`docs/process.md`](docs/process.md).
 | `disk_usage`         | Percent used, and space used, free and total, for each configured path       | Always on                             |
 | `list_health_checks` | Each Gatus check, failing first, with its latest response time               | `GATUS_URL`                           |
 | `recent_media`       | Films and episodes added to Jellyfin in the last 1 to 30 days                 | `JELLYFIN_URL` and `JELLYFIN_API_KEY` |
+| `download_queue`     | Sonarr and Radarr downloads, problems first, with each app's own message      | `SONARR_*` or `RADARR_*` pair         |
 | `read_report`        | Your scheduled status file as written, with a warning if it's out of date    | `REPORT_PATH`                         |
 
 ## Safety
@@ -180,6 +181,8 @@ the variable but never its value.
 | `DISK_PATHS`                       | No, default `root=/`                   | Comma-separated `label=path` pairs: different one-word labels, absolute paths without `=` or `,`  |
 | `GATUS_URL`                        | No, turns on Gatus                     | Gatus's base URL                                                                                |
 | `JELLYFIN_URL`, `JELLYFIN_API_KEY` | No, both or neither                    | Turn on Jellyfin. The key is only ever sent in a header                                         |
+| `SONARR_URL`, `SONARR_API_KEY`     | No, both or neither                    | Turn on Sonarr. The key is only ever sent in a header                                           |
+| `RADARR_URL`, `RADARR_API_KEY`     | No, both or neither                    | Turn on Radarr. The key is only ever sent in a header                                           |
 | `REPORT_PATH`                      | No, turns on the Report                | The Report file's absolute path, mounted read-only                                              |
 | `REPORT_MAX_AGE_HOURS`             | No, default `26`; only with `REPORT_PATH` | Whole hours; an older Report gets a warning                                                  |
 | `ADMIN_TOKEN` | No, turns on admin mode; 32+ characters, not `MCP_TOKEN` | The Token for admin mode. The server then offers only the Allowlist, and no read Tool |

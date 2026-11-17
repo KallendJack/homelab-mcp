@@ -4,6 +4,7 @@ import { pullConfig } from "./pull-config.ts";
 import { previewService, recreateService } from "./recreate-service.ts";
 import { reloadProxy } from "./reload-proxy.ts";
 import { type RunningServer, startServer } from "./server.ts";
+import { arr } from "./sources/arr.ts";
 import { compose } from "./sources/compose.ts";
 import { disk } from "./sources/disk.ts";
 import { docker, dockerAdmin } from "./sources/docker.ts";
@@ -33,6 +34,12 @@ async function startReadOnly(config: Config): Promise<RunningServer> {
     ...(config.gatusUrl ? { gatus: gatus(fetch, config.gatusUrl) } : {}),
     ...(config.jellyfin
       ? { jellyfin: jellyfin(fetch, config.jellyfin.url, config.jellyfin.apiKey, () => new Date()) }
+      : {}),
+    ...(config.sonarr
+      ? { sonarr: arr(fetch, config.sonarr.url, config.sonarr.apiKey, "Sonarr") }
+      : {}),
+    ...(config.radarr
+      ? { radarr: arr(fetch, config.radarr.url, config.radarr.apiKey, "Radarr") }
       : {}),
     ...(config.report
       ? { report: report(config.report.path, config.report.maxAgeHours, () => new Date()) }

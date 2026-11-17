@@ -9,6 +9,7 @@ import { z } from "zod";
 import { type Action, allowlist } from "./allowlist.ts";
 import { Refusal } from "./refusal.ts";
 import { type RunningServer, startServer } from "./server.ts";
+import { arr } from "./sources/arr.ts";
 import { disk } from "./sources/disk.ts";
 import { docker, dockerAdmin } from "./sources/docker.ts";
 import { gatus } from "./sources/gatus.ts";
@@ -109,6 +110,27 @@ describe("the Server", () => {
     const result = await client.callTool({ name: "list_health_checks", arguments: {} });
     expect(result.content).toEqual([
       { type: "text", text: expect.stringMatching(/^5 Health checks, 2 failing\./) },
+    ]);
+  });
+
+  it("offers download_queue with Sonarr on, and it works end to end", async () => {
+    const sonarrUrl = "http://sonarr.example:8989";
+    const { fetch } = fakeFetch({
+      [`${sonarrUrl}/api/v3/queue?page=1&pageSize=100&includeUnknownSeriesItems=true&includeSeries=true&includeEpisode=true`]:
+        fixture("sonarr/queue.json"),
+    });
+    const sources = {
+      docker: docker(fetch, dockerUrl),
+      disk: disk([]),
+      sonarr: arr(fetch, sonarrUrl, "test-sonarr-key-0000", "Sonarr" as const),
+    };
+    const { url } = await start(buildTools(sources, { privateContainers: [] }));
+    const client = await connect(url);
+
+    expect((await client.listTools()).tools.map((t) => t.name)).toContain("download_queue");
+    const result = await client.callTool({ name: "download_queue", arguments: {} });
+    expect(result.content).toEqual([
+      { type: "text", text: expect.stringMatching(/^5 downloads in the queue, 4 with problems\./) },
     ]);
   });
 

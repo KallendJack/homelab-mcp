@@ -186,3 +186,9 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   a community *arr MCP server: those offer 50-80 Tools including deletes, would hold the apps' admin keys in outside
   code, and none covers Dispatcharr. Designed against the live Dispatcharr 0.33 and Teamarr 2.25 OpenAPI schemas.
   `check_stream` is an Action, not a read, because playing a channel takes one of the provider's connections.
+- **2026-11-17**: Ticket 19 (#41), the phase 3 tracer bullet. Sonarr and Radarr as one optional Source module
+  (`sources/arr.ts`, the same v3 API) and `download_queue`, which reads both and lists problems first. Two things the
+  real data shaped: a season pack is one queue record per episode, so records are grouped by download before they
+  are shown, or one pack would look like ten problems; and one app that can't be read is a sentence above the
+  other's list rather than an error, since the other's problems are still worth seeing. The Host's queues were empty
+  when recorded, so the problem cases are hand-written in the recorded shape.
