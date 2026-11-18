@@ -1,0 +1,49 @@
+{
+  "id": 900003,
+  "adult": false,
+  "budget": 0,
+  "genres": [],
+  "originalLanguage": "en",
+  "originalTitle": "Example Film: Part Two",
+  "popularity": 10.5,
+  "releaseDate": "2024-02-27",
+  "status": "Released",
+  "title": "Example Film: Part Two",
+  "video": false,
+  "voteAverage": 7.1,
+  "voteCount": 900,
+  "overview": "A placeholder overview.",
+  "runtime": 120,
+  "mediaInfo": {
+    "downloadStatus": [],
+    "downloadStatus4k": [],
+    "id": 52,
+    "mediaType": "movie",
+    "tmdbId": 900003,
+    "tvdbId": null,
+    "imdbId": null,
+    "status": 3,
+    "status4k": 1,
+    "createdAt": "2026-11-01T10:00:00.000Z",
+    "updatedAt": "2026-11-01T10:00:00.000Z",
+    "requests": [
+      {
+        "id": 68,
+        "status": 2,
+        "createdAt": "2026-11-10T10:00:00.000Z",
+        "updatedAt": "2026-11-10T10:00:00.000Z",
+        "type": "movie",
+        "is4k": false,
+        "serverId": null,
+        "profileId": null,
+        "rootFolder": null,
+        "languageProfileId": null,
+        "tags": null,
+        "isAutoRequest": false,
+        "seasons": []
+      }
+    ],
+    "issues": [],
+    "seasons": []
+  }
+}

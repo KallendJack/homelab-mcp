@@ -3,6 +3,7 @@ import { humanBytes } from "./bytes.ts";
 import { closestNames } from "./closest-names.ts";
 import { downloadQueue } from "./download-queue.ts";
 import { importCandidates } from "./manual-import.ts";
+import { searchMedia } from "./media/requests.ts";
 import { formatReport } from "./read-report.ts";
 import { formatRecentMedia, recentMediaInput } from "./recent-media.ts";
 import { Refusal } from "./refusal.ts";
@@ -11,6 +12,7 @@ import type { Disk, DiskFailure, DiskUsage } from "./sources/disk.ts";
 import { CONTAINER_NAME, type Container, type Docker } from "./sources/docker.ts";
 import type { Gatus, HealthCheck, HealthCheckResult } from "./sources/gatus.ts";
 import type { Jellyfin } from "./sources/jellyfin.ts";
+import type { Jellyseerr } from "./sources/jellyseerr.ts";
 import type { ReportSource } from "./sources/report.ts";
 import { count, section } from "./wording.ts";
 
@@ -34,6 +36,7 @@ export type Sources = {
   jellyfin?: Jellyfin;
   sonarr?: Arr;
   radarr?: Arr;
+  jellyseerr?: Jellyseerr;
   report?: ReportSource;
 };
 
@@ -106,7 +109,7 @@ export function buildTools(sources: Sources, options: ToolOptions): Tool[] {
 }
 
 /** The Tools of optional Sources, each only when its Source is on. */
-function optionalTools({ gatus, jellyfin, sonarr, radarr, report }: Sources): Tool[] {
+function optionalTools({ gatus, jellyfin, sonarr, radarr, jellyseerr, report }: Sources): Tool[] {
   const tools: Tool[] = [];
   const arrs = [sonarr, radarr].filter((a): a is Arr => a !== undefined);
   if (gatus) {
@@ -147,6 +150,7 @@ function optionalTools({ gatus, jellyfin, sonarr, radarr, report }: Sources): To
       handler: async () => downloadQueue(arrs),
     });
   }
+  if (jellyseerr) tools.push(searchMedia(jellyseerr));
   if (report) {
     tools.push({
       name: "read_report",

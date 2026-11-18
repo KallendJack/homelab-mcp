@@ -36,3 +36,11 @@ other answers to a start (204 started, 304 already running) have no body.
 server asks for. `queue.json` is hand-written in the same shape for what an empty queue can't show: downloading,
 stalled, import blocked, failed and import pending, and a season pack listed once per episode (records 103 and 106
 share a download).
+
+`jellyseerr/` holds Jellyseerr 2.7.3's answers. `search-empty-recorded.json` is **recorded from a real Host** (2026-11-18). The
+others are hand-written in the shape of answers recorded the same day (search, a film and a series' details), trimmed to
+the fields the server reads plus a few neighbours, with placeholder titles and ids and the Host's addresses and users
+left out: a search with every availability and a person, a film not in Jellyseerr, a requested film, a partly available
+series (seasons 1-2 available, 3 requested, 4 not, plus specials), a series not in Jellyseerr, a created request and
+the answer to a duplicate. No real request was sent to record them, so `request-created.json` follows Jellyseerr's
+source for `POST /api/v1/request`.

@@ -1,0 +1,153 @@
+{
+  "id": 900004,
+  "name": "Partial Show",
+  "firstAirDate": "2023-05-29",
+  "lastAirDate": "2025-01-01",
+  "inProduction": false,
+  "numberOfEpisodes": 20,
+  "numberOfSeasons": 4,
+  "originalLanguage": "en",
+  "originalName": "Partial Show",
+  "overview": "A placeholder overview.",
+  "status": "Ended",
+  "type": "Scripted",
+  "seasons": [
+    {
+      "airDate": "2023-05-29",
+      "episodeCount": 2,
+      "id": 800000,
+      "name": "Specials",
+      "overview": "",
+      "seasonNumber": 0,
+      "posterPath": null
+    },
+    {
+      "airDate": "2023-05-29",
+      "episodeCount": 6,
+      "id": 800001,
+      "name": "Season 1",
+      "overview": "",
+      "seasonNumber": 1,
+      "posterPath": null
+    },
+    {
+      "airDate": "2023-05-29",
+      "episodeCount": 4,
+      "id": 800002,
+      "name": "Season 2",
+      "overview": "",
+      "seasonNumber": 2,
+      "posterPath": null
+    },
+    {
+      "airDate": "2023-05-29",
+      "episodeCount": 5,
+      "id": 800003,
+      "name": "Season 3",
+      "overview": "",
+      "seasonNumber": 3,
+      "posterPath": null
+    },
+    {
+      "airDate": "2023-05-29",
+      "episodeCount": 6,
+      "id": 800004,
+      "name": "Season 4",
+      "overview": "",
+      "seasonNumber": 4,
+      "posterPath": null
+    }
+  ],
+  "mediaInfo": {
+    "downloadStatus": [],
+    "downloadStatus4k": [],
+    "id": 53,
+    "mediaType": "tv",
+    "tmdbId": 900004,
+    "tvdbId": null,
+    "imdbId": null,
+    "status": 4,
+    "status4k": 1,
+    "createdAt": "2026-11-01T10:00:00.000Z",
+    "updatedAt": "2026-11-01T10:00:00.000Z",
+    "requests": [
+      {
+        "id": 77,
+        "status": 5,
+        "createdAt": "2026-11-10T10:00:00.000Z",
+        "updatedAt": "2026-11-10T10:00:00.000Z",
+        "type": "tv",
+        "is4k": false,
+        "serverId": null,
+        "profileId": null,
+        "rootFolder": null,
+        "languageProfileId": null,
+        "tags": null,
+        "isAutoRequest": false,
+        "seasons": [
+          {
+            "id": 101,
+            "seasonNumber": 1,
+            "status": 5,
+            "createdAt": "2026-11-10T10:00:00.000Z",
+            "updatedAt": "2026-11-10T10:00:00.000Z"
+          }
+        ]
+      },
+      {
+        "id": 80,
+        "status": 2,
+        "createdAt": "2026-11-10T10:00:00.000Z",
+        "updatedAt": "2026-11-10T10:00:00.000Z",
+        "type": "tv",
+        "is4k": false,
+        "serverId": null,
+        "profileId": null,
+        "rootFolder": null,
+        "languageProfileId": null,
+        "tags": null,
+        "isAutoRequest": false,
+        "seasons": [
+          {
+            "id": 102,
+            "seasonNumber": 2,
+            "status": 5,
+            "createdAt": "2026-11-10T10:00:00.000Z",
+            "updatedAt": "2026-11-10T10:00:00.000Z"
+          },
+          {
+            "id": 103,
+            "seasonNumber": 3,
+            "status": 2,
+            "createdAt": "2026-11-10T10:00:00.000Z",
+            "updatedAt": "2026-11-10T10:00:00.000Z"
+          }
+        ]
+      }
+    ],
+    "issues": [],
+    "seasons": [
+      {
+        "id": 85,
+        "seasonNumber": 1,
+        "status": 5,
+        "createdAt": "2026-11-10T10:00:00.000Z",
+        "updatedAt": "2026-11-10T10:00:00.000Z"
+      },
+      {
+        "id": 86,
+        "seasonNumber": 2,
+        "status": 5,
+        "createdAt": "2026-11-10T10:00:00.000Z",
+        "updatedAt": "2026-11-10T10:00:00.000Z"
+      },
+      {
+        "id": 87,
+        "seasonNumber": 3,
+        "status": 3,
+        "createdAt": "2026-11-10T10:00:00.000Z",
+        "updatedAt": "2026-11-10T10:00:00.000Z"
+      }
+    ]
+  }
+}

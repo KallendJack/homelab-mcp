@@ -1,0 +1,17 @@
+{
+  "id": 900001,
+  "adult": false,
+  "budget": 0,
+  "genres": [],
+  "originalLanguage": "en",
+  "originalTitle": "Example Film",
+  "popularity": 10.5,
+  "releaseDate": "2021-09-15",
+  "status": "Released",
+  "title": "Example Film",
+  "video": false,
+  "voteAverage": 7.1,
+  "voteCount": 900,
+  "overview": "A placeholder overview.",
+  "runtime": 120
+}
