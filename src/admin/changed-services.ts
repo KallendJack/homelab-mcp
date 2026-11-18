@@ -1,7 +1,7 @@
 import { posix } from "node:path";
 import { parse } from "yaml";
 import { z } from "zod";
-import { Refusal } from "./refusal.ts";
+import { Refusal } from "../refusal.ts";
 
 const mount = z.union([
   z.string(),

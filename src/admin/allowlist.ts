@@ -1,7 +1,7 @@
-import { redact } from "./redaction.ts";
-import { Refusal } from "./refusal.ts";
-import type { Notifier } from "./sources/ntfy.ts";
-import type { Tool } from "./tools.ts";
+import { redact } from "../redaction.ts";
+import { Refusal } from "../refusal.ts";
+import type { Notifier } from "../sources/ntfy.ts";
+import type { Tool } from "../tools.ts";
 
 /** A Tool that changes the Host. The Allowlist adds its marking, logging, time limit and the one-at-a-time rule. */
 export type Action = Omit<Tool, "changesHost" | "logArguments"> & {

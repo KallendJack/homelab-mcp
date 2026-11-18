@@ -6,7 +6,8 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { type Action, allowlist } from "./allowlist.ts";
+import { type Action, allowlist } from "./admin/allowlist.ts";
+import { startContainer } from "./admin/start-container.ts";
 import { Refusal } from "./refusal.ts";
 import { type RunningServer, startServer } from "./server.ts";
 import { arr } from "./sources/arr.ts";
@@ -17,7 +18,6 @@ import { jellyseerr } from "./sources/jellyseerr.ts";
 import { report } from "./sources/report.ts";
 import { socketFetch } from "./sources/socket-fetch.ts";
 import { SourceError } from "./sources/source-error.ts";
-import { startContainer } from "./start-container.ts";
 import { fakeFetch, fixture } from "./testing/fake-fetch.ts";
 import { serveOnLocalSocket } from "./testing/local-socket.ts";
 import { buildTools, type Tool } from "./tools.ts";

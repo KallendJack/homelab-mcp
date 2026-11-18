@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { Refusal } from "./refusal.ts";
+import { Refusal } from "../refusal.ts";
+import { dockerAdmin } from "../sources/docker.ts";
+import { type FakeAnswer, fakeFetch } from "../testing/fake-fetch.ts";
 import { reloadProxy } from "./reload-proxy.ts";
-import { dockerAdmin } from "./sources/docker.ts";
-import { type FakeAnswer, fakeFetch } from "./testing/fake-fetch.ts";
 
 const dockerUrl = "http://docker";
 const proxy = { container: "proxy", command: ["proxy", "reload", "--config", "/etc/proxy/config"] };

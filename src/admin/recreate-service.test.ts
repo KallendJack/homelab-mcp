@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { Refusal } from "../refusal.ts";
+import { compose } from "../sources/compose.ts";
+import { dockerAdmin, serviceContainersUrl } from "../sources/docker.ts";
+import { SourceError } from "../sources/source-error.ts";
+import { type ComposeAnswer, fakeCompose } from "../testing/fake-compose.ts";
+import { fakeFetch } from "../testing/fake-fetch.ts";
 import { previewService, recreateService } from "./recreate-service.ts";
-import { Refusal } from "./refusal.ts";
-import { compose } from "./sources/compose.ts";
-import { dockerAdmin, serviceContainersUrl } from "./sources/docker.ts";
-import { SourceError } from "./sources/source-error.ts";
-import { type ComposeAnswer, fakeCompose } from "./testing/fake-compose.ts";
-import { fakeFetch } from "./testing/fake-fetch.ts";
 
 const dockerUrl = "http://docker";
 const ops = ["-f", "/host/stacks/ops/compose.yaml"];

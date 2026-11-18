@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
+import { Refusal } from "../refusal.ts";
+import { dockerAdmin } from "../sources/docker.ts";
+import { SourceError } from "../sources/source-error.ts";
+import { type FakeAnswer, fakeFetch, fixture } from "../testing/fake-fetch.ts";
 import { allowlist } from "./allowlist.ts";
-import { Refusal } from "./refusal.ts";
-import { dockerAdmin } from "./sources/docker.ts";
-import { SourceError } from "./sources/source-error.ts";
 import { startContainer } from "./start-container.ts";
-import { type FakeAnswer, fakeFetch, fixture } from "./testing/fake-fetch.ts";
 
 const dockerUrl = "http://docker";
 const list = `${dockerUrl}/containers/json?all=true`;

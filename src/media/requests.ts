@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Action } from "../allowlist.ts";
+import type { Action } from "../admin/allowlist.ts";
 import { Refusal } from "../refusal.ts";
 import type { Jellyseerr, Listing, Season } from "../sources/jellyseerr.ts";
 import type { Tool } from "../tools.ts";

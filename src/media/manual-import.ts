@@ -1,10 +1,10 @@
 import { z } from "zod";
-import type { Action } from "./allowlist.ts";
+import type { Action } from "../admin/allowlist.ts";
+import { Refusal } from "../refusal.ts";
+import type { Arr, ImportCandidate, QueueItem } from "../sources/arr.ts";
+import type { Tool } from "../tools.ts";
+import { count, section } from "../wording.ts";
 import { downloadInput, findDownload } from "./queue-lookup.ts";
-import { Refusal } from "./refusal.ts";
-import type { Arr, ImportCandidate, QueueItem } from "./sources/arr.ts";
-import type { Tool } from "./tools.ts";
-import { count, section } from "./wording.ts";
 
 const input = z.object(downloadInput);
 

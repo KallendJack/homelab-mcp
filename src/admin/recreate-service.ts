@@ -1,10 +1,10 @@
 import { z } from "zod";
+import { SERVICE_NAME } from "../config.ts";
+import { Refusal } from "../refusal.ts";
+import type { Compose } from "../sources/compose.ts";
+import type { DockerAdmin } from "../sources/docker.ts";
 import type { Action } from "./allowlist.ts";
-import { SERVICE_NAME } from "./config.ts";
-import { Refusal } from "./refusal.ts";
 import { type ComposeModel, dependentsOf, findService, planFor } from "./service-plan.ts";
-import type { Compose } from "./sources/compose.ts";
-import type { DockerAdmin } from "./sources/docker.ts";
 
 export type RecreateSettings = {
   compose: Compose;
