@@ -29,14 +29,7 @@ route.
 `main.ts` wires them: load Config, build the Sources that are on, build the Tools, start the Server. With `ADMIN_TOKEN`
 set it starts admin mode instead: the Allowlist alone, behind the admin Token.
 
-Folders under `src/`: `sources/` holds the Sources, `admin/` the Allowlist and the Config repo and Service
-Actions, `media/` the Sonarr, Radarr, Jellyfin and Jellyseerr Tools and Actions, and `testing/` the test fakes. The Server, the Tools list,
-Config, Redaction and shared helpers sit at the top.
-
-The smaller modules, Tools and Actions sit beside them: `sources/http.ts` (`httpRequests`: every HTTP Source's requests, with the
-time limit and plain-sentence failures), `sources/time-limit.ts` (`withinTimeLimit`, for work that can't be cancelled),
-`sources/source-error.ts` (`SourceError` and `safeErrorCode`), `refusal.ts`, `bytes.ts` (`humanBytes`),
-`sources/socket-fetch.ts` (`socketFetch`: a `fetch` over a local socket, so admin mode reaches Docker's own socket), `admin/start-container.ts` (the `start_container` Action), `admin/recreate-service.ts` (`preview_service` and `recreate_service`), `admin/reload-proxy.ts` (`reload_proxy`, through Docker's exec with the command from config), `sources/ntfy.ts` (sends a Notification), `admin/service-plan.ts` (which Compose file a Service is in, what a recreate would change and whom it would disturb), `sources/compose.ts` (runs `docker compose` against one file through Docker's socket, keeping only the plan's fields of the resolved model, since the rest holds Secrets), `admin/pull-config.ts` (the `pull_config` Action: Git with the deploy key, fast-forward only) and `admin/changed-services.ts` (which Services a set of changed files affects, read from the Compose text), `closest-names.ts`, `wording.ts` (`count`, `section`), `media/recent-media.ts` (`recent_media`'s input and wording), `media/download-queue.ts` (`download_queue`: every app's queue, problems first, one app's failure a note) and `media/retry-download.ts` (the `retry_download` Action). `media/requests.ts` holds `search_media` and the `request_media` Action.
+What each file holds is in the [code layout](../README.md#code-layout) and its folder READMEs.
 
 ## Tools (phase 1)
 
