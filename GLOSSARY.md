@@ -26,8 +26,8 @@ _Avoid_: API key, password
 ### What it reads
 
 **Source**:
-A system on the Host that the server reads from: Docker and the disk always, and Gatus, Jellyfin and a Report when
-configured. An optional Source is off until configured, and its Tools aren't offered while it's off.
+A system on the Host that the server reads from: Docker and the disk always, and Gatus, Jellyfin, Sonarr, Radarr,
+Jellyseerr and a Report when configured. An optional Source is off until configured, and its Tools aren't offered while it's off.
 _Avoid_: integration, provider, backend, plugin
 
 **Container**:
@@ -54,6 +54,15 @@ _Avoid_: briefing, digest, summary
 A Report older than its schedule allows, so it may no longer describe the Host. It is still returned, with a warning
 saying how old it is.
 _Avoid_: old, outdated, expired
+
+**Listing**:
+A film or series as Jellyseerr knows it, in the library or not, with whether it's available, partly available,
+requested or not requested.
+_Avoid_: title, media item (that's in Jellyfin's library), result
+
+**Request**:
+Asking Jellyseerr for a Listing, or some of a series' seasons, so Sonarr or Radarr downloads it.
+_Avoid_: order, wish
 
 **Queue item**:
 One download Sonarr or Radarr is tracking, from grabbed to imported, with its state and any warning.

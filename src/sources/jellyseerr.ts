@@ -13,8 +13,8 @@ export type Availability =
   | "not requested"
   | "blocklisted";
 
-/** One film or series Jellyseerr knows, by the id request_media takes (TMDB's). */
-export type Title = {
+/** A Listing, by the id request_media takes (TMDB's). */
+export type Listing = {
   type: MediaType;
   id: number;
   name: string;
@@ -27,7 +27,7 @@ export type Season = { number: number; availability: Availability };
 
 export type SearchResults = {
   /** Films and series only, in Jellyseerr's order: people are left out. */
-  titles: Title[];
+  listings: Listing[];
   /** Whether Jellyseerr has more pages of results than the first. */
   morePages: boolean;
 };
@@ -42,8 +42,8 @@ export type RequestAnswer =
 
 export type Jellyseerr = {
   search(query: string): Promise<SearchResults>;
-  /** One title, with its seasons for a series. */
-  details(type: MediaType, id: number): Promise<Title & { seasons: Season[] }>;
+  /** One Listing, with its seasons for a series. */
+  details(type: MediaType, id: number): Promise<Listing & { seasons: Season[] }>;
   /** Requests a film, or the given seasons of a series. */
   request(type: MediaType, id: number, seasons: number[]): Promise<RequestAnswer>;
 };
@@ -121,7 +121,7 @@ function yearOf(date: string | undefined): number | undefined {
   return Number.isNaN(year) ? undefined : year;
 }
 
-function titleOf(raw: z.infer<typeof film> | z.infer<typeof series>): Title {
+function listingOf(raw: z.infer<typeof film> | z.infer<typeof series>): Listing {
   const isFilm = "title" in raw;
   return {
     type: isFilm ? "film" : "series",
@@ -179,16 +179,16 @@ export function jellyseerr(
         `/search?query=${encodeQuery(query)}&page=1`,
         searchResults,
       );
-      const titles = answer.results.flatMap((r) => ("id" in r ? [titleOf(r)] : []));
-      return { titles, morePages: answer.totalPages > answer.page };
+      const listings = answer.results.flatMap((r) => ("id" in r ? [listingOf(r)] : []));
+      return { listings, morePages: answer.totalPages > answer.page };
     },
 
     async details(type, id) {
       if (type === "film")
-        return { ...titleOf(await http.getJson(`/movie/${id}`, film)), seasons: [] };
+        return { ...listingOf(await http.getJson(`/movie/${id}`, film)), seasons: [] };
       const raw = await http.getJson(`/tv/${id}`, seriesDetails);
       const numbers = raw.seasons.map((s) => s.seasonNumber);
-      return { ...titleOf(raw), seasons: seasonsOf(numbers, raw.mediaInfo) };
+      return { ...listingOf(raw), seasons: seasonsOf(numbers, raw.mediaInfo) };
     },
 
     async request(type, id, seasons) {

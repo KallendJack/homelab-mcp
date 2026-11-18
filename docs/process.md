@@ -210,7 +210,7 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
 - **2026-11-18**: Ticket 22 (#44), Requests. Jellyseerr as an optional Source with `search_media` and the
   `request_media` Action. Designed against Jellyseerr 2.7.3's source and checked read-only against the Host: search,
   and a film's and a series' details. Two things the real API shaped: Jellyseerr refuses a query holding any reserved
-  character, and `encodeURIComponent` leaves `'` and `!` alone, so "It's Always Sunny" found nothing until every one
+  character, and `encodeURIComponent` leaves `'` and `!` alone, so a name such as "It's Over" found nothing until every one
   was encoded; and a series' seasons have their own status, which `request_media` reads before asking, so it can
   request only the seasons not already there and say which it left out, rather than relying on Jellyseerr quietly
   dropping them. A season named only in an open request counts as requested, as Jellyseerr counts it. Specials

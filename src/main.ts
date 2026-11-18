@@ -82,7 +82,7 @@ async function startAdmin(config: Config, admin: AdminConfig): Promise<RunningSe
     ...(config.sonarr ? [arr(fetch, config.sonarr.url, config.sonarr.apiKey, "Sonarr")] : []),
     ...(config.radarr ? [arr(fetch, config.radarr.url, config.radarr.apiKey, "Radarr")] : []),
   ];
-  const requests = config.jellyseerr
+  const seerr = config.jellyseerr
     ? jellyseerr(fetch, config.jellyseerr.url, config.jellyseerr.apiKey)
     : undefined;
   const tools = allowlist(
@@ -94,12 +94,12 @@ async function startAdmin(config: Config, admin: AdminConfig): Promise<RunningSe
       // Offered only when configured, as an optional Source's Tool is.
       ...(admin.proxy ? [reloadProxy(host, admin.proxy)] : []),
       ...(arrs.length > 0 ? [retryDownload(arrs), manualImport(arrs)] : []),
-      ...(requests ? [requestMedia(requests)] : []),
+      ...(seerr ? [requestMedia(seerr)] : []),
     ],
     notifier ? { notifier } : {},
   );
   const server = await startServer({ token: admin.token, port: config.port }, tools);
-  const media = [...arrs.map((a) => a.app), ...(requests ? ["Jellyseerr"] : [])];
+  const media = [...arrs.map((a) => a.app), ...(seerr ? ["Jellyseerr"] : [])];
   const startUp = adminStartUp(admin.repoPath, tools, notifier !== undefined, media);
   console.log(`homelab-mcp admin mode listening on port ${config.port}. ${startUp}`);
   return server;

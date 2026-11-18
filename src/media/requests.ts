@@ -1,11 +1,11 @@
 import { z } from "zod";
 import type { Action } from "../allowlist.ts";
 import { Refusal } from "../refusal.ts";
-import type { Jellyseerr, Season, Title } from "../sources/jellyseerr.ts";
+import type { Jellyseerr, Listing, Season } from "../sources/jellyseerr.ts";
 import type { Tool } from "../tools.ts";
 
 /** The most results search_media shows: enough to pick from, few enough to read. */
-export const MOST_RESULTS = 10;
+const MOST_RESULTS = 10;
 
 const searchInput = z.object({
   name: z.string().trim().min(1).max(100).describe("The film or series name to search for"),
@@ -22,8 +22,8 @@ const requestInput = z.object({
 });
 
 /** "Example Film (2021)", or just the name when Jellyseerr has no date. */
-function named(title: Title): string {
-  return title.year === undefined ? title.name : `${title.name} (${title.year})`;
+function labelOf(listing: Listing): string {
+  return listing.year === undefined ? listing.name : `${listing.name} (${listing.year})`;
 }
 
 /** "season 2", "seasons 1, 2 and 4". */
@@ -46,24 +46,24 @@ export function searchMedia(jellyseerr: Jellyseerr): Tool {
     logArguments: (args) => String(args.name),
     async handler(args) {
       const { name } = searchInput.parse(args);
-      const { titles, morePages } = await jellyseerr.search(name);
-      if (titles.length === 0) return `Jellyseerr found no film or series called "${name}".`;
-      const shown = titles.slice(0, MOST_RESULTS);
+      const { listings, morePages } = await jellyseerr.search(name);
+      if (listings.length === 0) return `Jellyseerr found no film or series called "${name}".`;
+      const shown = listings.slice(0, MOST_RESULTS);
       const more =
-        titles.length > shown.length || morePages
+        listings.length > shown.length || morePages
           ? " Jellyseerr has more; add more of the name to narrow it."
           : "";
       return [
         `Jellyseerr's top ${shown.length} for "${name}".${more}`,
         "",
-        ...shown.map((t) => `- ${named(t)}: ${t.type}, ${t.availability} (${t.type} ${t.id})`),
+        ...shown.map((t) => `- ${labelOf(t)}: ${t.type}, ${t.availability} (${t.type} ${t.id})`),
       ].join("\n");
     },
   };
 }
 
 /** Which of the wanted seasons can still be requested, and why the rest can't. */
-function sortSeasons(wanted: Season[]): { open: number[]; taken: string[] } {
+function splitSeasons(wanted: Season[]): { open: number[]; taken: string[] } {
   const open = wanted.filter((s) => s.availability === "not requested").map((s) => s.number);
   const taken = (["available", "partly available", "requested", "blocklisted"] as const).flatMap(
     (availability) => {
@@ -88,30 +88,32 @@ export function requestMedia(jellyseerr: Jellyseerr): Action {
       if (type === "film" && asked) {
         throw new Refusal("A film has no seasons. Leave seasons out to request it.");
       }
-      const title = await jellyseerr.details(type, id);
-      const label = named(title);
-      if (title.availability === "blocklisted") {
+      const listing = await jellyseerr.details(type, id);
+      const label = labelOf(listing);
+      if (listing.availability === "blocklisted") {
         throw new Refusal(`${label} is blocklisted in Jellyseerr, so it can't be requested.`);
       }
 
       let toRequest: number[] = [];
       let leftOut = "";
       if (type === "film") {
-        if (title.availability !== "not requested") {
-          throw new Refusal(`${label} is already ${title.availability}, so nothing was requested.`);
+        if (listing.availability !== "not requested") {
+          throw new Refusal(
+            `${label} is already ${listing.availability}, so nothing was requested.`,
+          );
         }
       } else {
-        const unknown = (asked ?? []).filter((n) => !title.seasons.some((s) => s.number === n));
+        const unknown = (asked ?? []).filter((n) => !listing.seasons.some((s) => s.number === n));
         if (unknown.length > 0) {
-          const has = title.seasons.map((s) => s.number);
+          const has = listing.seasons.map((s) => s.number);
           throw new Refusal(
             `${label} has no ${seasonList(unknown)}; it has ${has.length === 0 ? "none listed" : seasonList(has)}.`,
           );
         }
         const wanted = asked
-          ? title.seasons.filter((s) => asked.includes(s.number))
-          : title.seasons;
-        const { open, taken } = sortSeasons(wanted);
+          ? listing.seasons.filter((s) => asked.includes(s.number))
+          : listing.seasons;
+        const { open, taken } = splitSeasons(wanted);
         if (open.length === 0) {
           const why = taken.length > 0 ? taken.join(", ") : "no seasons listed";
           throw new Refusal(
