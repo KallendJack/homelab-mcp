@@ -6,11 +6,13 @@ naming anything, and use its terms (and avoid its _Avoid_ lists) in code, tests,
 
 ## House rules
 
-From `KallendJack/house`, `rules/base.md`. House version: 0.8.0, reviewed against Matt's skills 1.3.2.
+From `KallendJack/house`, `rules/base.md`. House version: 0.9.0, reviewed against Matt's skills 1.3.2.
 Change shared rules in House; keep project-specific rules below this section.
 
-- **Workflow:** use Matt Pocock's skills directly; `ask-matt` routes when unsure. His rules take precedence over
-  House. The owner chooses the work.
+- **Workflow:** work follows Matt Pocock's main flow; `ask-matt` has the map. Build each ticket with his
+  `implement` skill, which drives `tdd` and ends with `code-review`; asked to build one without `/implement`,
+  read that skill's `SKILL.md` and follow its steps anyway. Write PR bodies with his `pr` skill. His rules take
+  precedence over House. The owner chooses the work.
 - **Work tracking:** planned work and bugs live where `docs/agents/issue-tracker.md` says. Small incidental fixes
   can go straight into a PR. Milestones group deliverable outcomes; blocking links express dependencies.
 - **Checks:** run the repo's checks before pushing. Fix failing CI before calling a PR ready; merge requires
