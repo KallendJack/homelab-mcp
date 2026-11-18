@@ -1,6 +1,6 @@
-import { closestNames } from "./closest-names.ts";
-import { Refusal } from "./refusal.ts";
-import type { ServiceContainer } from "./sources/docker.ts";
+import { closestNames } from "../closest-names.ts";
+import { Refusal } from "../refusal.ts";
+import type { ServiceContainer } from "../sources/docker.ts";
 
 /** What admin mode needs from one Compose file's resolved model (`docker compose config --format json`). */
 export type ComposeModel = {

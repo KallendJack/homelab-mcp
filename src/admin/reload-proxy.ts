@@ -1,6 +1,6 @@
+import { Refusal } from "../refusal.ts";
+import type { DockerAdmin } from "../sources/docker.ts";
 import type { Action } from "./allowlist.ts";
-import { Refusal } from "./refusal.ts";
-import type { DockerAdmin } from "./sources/docker.ts";
 
 export type ProxySettings = {
   /** The reverse proxy's Container. */

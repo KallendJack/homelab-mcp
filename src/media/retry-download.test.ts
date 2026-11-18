@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { Refusal } from "./refusal.ts";
+import { Refusal } from "../refusal.ts";
+import { arr } from "../sources/arr.ts";
+import { type FakeAnswer, fakeFetch, fixture } from "../testing/fake-fetch.ts";
 import { retryDownload } from "./retry-download.ts";
-import { arr } from "./sources/arr.ts";
-import { type FakeAnswer, fakeFetch, fixture } from "./testing/fake-fetch.ts";
 
 const sonarrUrl = "http://sonarr.example:8989";
 const sonarrKey = "test-sonarr-key-0000";

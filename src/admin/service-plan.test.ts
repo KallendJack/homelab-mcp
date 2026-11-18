@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Refusal } from "./refusal.ts";
+import { Refusal } from "../refusal.ts";
 import { type ComposeModel, dependentsOf, findService, planFor } from "./service-plan.ts";
 
 /** A resolved Compose model in the shape `docker compose config --format json` gives, with placeholder names. */

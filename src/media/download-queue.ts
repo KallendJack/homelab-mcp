@@ -5,9 +5,9 @@ import {
   QUEUE_STATES,
   type Queue,
   type QueueItem,
-} from "./sources/arr.ts";
-import { SourceError } from "./sources/source-error.ts";
-import { count, section } from "./wording.ts";
+} from "../sources/arr.ts";
+import { SourceError } from "../sources/source-error.ts";
+import { count, section } from "../wording.ts";
 
 type Read = { app: ArrApp; queue: Queue };
 type Unread = { app: ArrApp; error: SourceError };

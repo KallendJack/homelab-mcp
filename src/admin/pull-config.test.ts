@@ -3,8 +3,8 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it } from "vitest";
+import { Refusal } from "../refusal.ts";
 import { pullConfig } from "./pull-config.ts";
-import { Refusal } from "./refusal.ts";
 
 const folders: string[] = [];
 function git(cwd: string, ...args: string[]) {

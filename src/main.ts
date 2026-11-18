@@ -1,10 +1,11 @@
-import { adminStartUp, allowlist } from "./allowlist.ts";
+import { adminStartUp, allowlist } from "./admin/allowlist.ts";
+import { pullConfig } from "./admin/pull-config.ts";
+import { previewService, recreateService } from "./admin/recreate-service.ts";
+import { reloadProxy } from "./admin/reload-proxy.ts";
+import { startContainer } from "./admin/start-container.ts";
 import { type AdminConfig, type Config, ConfigError, loadConfig, sourcesOn } from "./config.ts";
-import { manualImport } from "./manual-import.ts";
-import { pullConfig } from "./pull-config.ts";
-import { previewService, recreateService } from "./recreate-service.ts";
-import { reloadProxy } from "./reload-proxy.ts";
-import { retryDownload } from "./retry-download.ts";
+import { manualImport } from "./media/manual-import.ts";
+import { retryDownload } from "./media/retry-download.ts";
 import { type RunningServer, startServer } from "./server.ts";
 import { type Arr, arr } from "./sources/arr.ts";
 import { compose } from "./sources/compose.ts";
@@ -15,7 +16,6 @@ import { jellyfin } from "./sources/jellyfin.ts";
 import { ntfy } from "./sources/ntfy.ts";
 import { report } from "./sources/report.ts";
 import { socketFetch } from "./sources/socket-fetch.ts";
-import { startContainer } from "./start-container.ts";
 import { buildTools } from "./tools.ts";
 
 function configOrExit(): Config {

@@ -1,8 +1,8 @@
 import { z } from "zod";
+import { closestNames } from "../closest-names.ts";
+import { Refusal } from "../refusal.ts";
+import { CONTAINER_NAME, type DockerAdmin } from "../sources/docker.ts";
 import type { Action } from "./allowlist.ts";
-import { closestNames } from "./closest-names.ts";
-import { Refusal } from "./refusal.ts";
-import { CONTAINER_NAME, type DockerAdmin } from "./sources/docker.ts";
 
 const input = z.object({
   name: z

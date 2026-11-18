@@ -2,9 +2,9 @@ import { execFile } from "node:child_process";
 import { constants } from "node:fs";
 import { access, stat } from "node:fs/promises";
 import { promisify } from "node:util";
+import { Refusal } from "../refusal.ts";
 import type { Action } from "./allowlist.ts";
 import { changedServices } from "./changed-services.ts";
-import { Refusal } from "./refusal.ts";
 
 const execFileAsync = promisify(execFile);
 
