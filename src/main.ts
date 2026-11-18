@@ -5,6 +5,7 @@ import { reloadProxy } from "./admin/reload-proxy.ts";
 import { startContainer } from "./admin/start-container.ts";
 import { type AdminConfig, type Config, ConfigError, loadConfig, sourcesOn } from "./config.ts";
 import { manualImport } from "./media/manual-import.ts";
+import { requestMedia } from "./media/requests.ts";
 import { retryDownload } from "./media/retry-download.ts";
 import { type RunningServer, startServer } from "./server.ts";
 import { type Arr, arr } from "./sources/arr.ts";
@@ -13,6 +14,7 @@ import { disk } from "./sources/disk.ts";
 import { docker, dockerAdmin } from "./sources/docker.ts";
 import { gatus } from "./sources/gatus.ts";
 import { jellyfin } from "./sources/jellyfin.ts";
+import { jellyseerr } from "./sources/jellyseerr.ts";
 import { ntfy } from "./sources/ntfy.ts";
 import { report } from "./sources/report.ts";
 import { socketFetch } from "./sources/socket-fetch.ts";
@@ -42,6 +44,9 @@ async function startReadOnly(config: Config): Promise<RunningServer> {
       : {}),
     ...(config.radarr
       ? { radarr: arr(fetch, config.radarr.url, config.radarr.apiKey, "Radarr") }
+      : {}),
+    ...(config.jellyseerr
+      ? { jellyseerr: jellyseerr(fetch, config.jellyseerr.url, config.jellyseerr.apiKey) }
       : {}),
     ...(config.report
       ? { report: report(config.report.path, config.report.maxAgeHours, () => new Date()) }
@@ -77,6 +82,9 @@ async function startAdmin(config: Config, admin: AdminConfig): Promise<RunningSe
     ...(config.sonarr ? [arr(fetch, config.sonarr.url, config.sonarr.apiKey, "Sonarr")] : []),
     ...(config.radarr ? [arr(fetch, config.radarr.url, config.radarr.apiKey, "Radarr")] : []),
   ];
+  const seerr = config.jellyseerr
+    ? jellyseerr(fetch, config.jellyseerr.url, config.jellyseerr.apiKey)
+    : undefined;
   const tools = allowlist(
     [
       pullConfig(admin),
@@ -86,11 +94,12 @@ async function startAdmin(config: Config, admin: AdminConfig): Promise<RunningSe
       // Offered only when configured, as an optional Source's Tool is.
       ...(admin.proxy ? [reloadProxy(host, admin.proxy)] : []),
       ...(arrs.length > 0 ? [retryDownload(arrs), manualImport(arrs)] : []),
+      ...(seerr ? [requestMedia(seerr)] : []),
     ],
     notifier ? { notifier } : {},
   );
   const server = await startServer({ token: admin.token, port: config.port }, tools);
-  const media = arrs.map((a) => a.app);
+  const media = [...arrs.map((a) => a.app), ...(seerr ? ["Jellyseerr"] : [])];
   const startUp = adminStartUp(admin.repoPath, tools, notifier !== undefined, media);
   console.log(`homelab-mcp admin mode listening on port ${config.port}. ${startUp}`);
   return server;

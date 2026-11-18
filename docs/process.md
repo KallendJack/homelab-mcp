@@ -207,3 +207,12 @@ the code; I review every PR on GitHub and answer an explain-it-back question on 
   since deleting a big pack can take longer; and a pack counts as downloaded if any of its episodes has arrived.
 - **2026-11-17**: Ticket 21 (#43), manual import preview and Action. Jack approved importing matched files and listing rejected or unmatched files, replacing the original all-or-nothing refusal. Tests use scrubbed Sonarr and Radarr fixtures. Regression testing caught quality IDs and resolution being stripped before submission; the nested quality data is now preserved. No live import was performed.
   Review also caught test-only polling parameters, missing quality and skip details, and misleading episode ranges. Polling is now tested with fake timers, reports retain skip details on failure, and exact episode codes are listed. Completion wording reports the command outcome without claiming every file arrived.
+- **2026-11-18**: Ticket 22 (#44), Requests. Jellyseerr as an optional Source with `search_media` and the
+  `request_media` Action. Designed against Jellyseerr 2.7.3's source and checked read-only against the Host: search,
+  and a film's and a series' details. Two things the real API shaped: Jellyseerr refuses a query holding any reserved
+  character, and `encodeURIComponent` leaves `'` and `!` alone, so a name such as "It's Over" found nothing until every one
+  was encoded; and a series' seasons have their own status, which `request_media` reads before asking, so it can
+  request only the seasons not already there and say which it left out, rather than relying on Jellyseerr quietly
+  dropping them. A season named only in an open request counts as requested, as Jellyseerr counts it. Specials
+  (season 0) are never requested. `src/` is at the size check's file limit, so media Tools from here on go in
+  `src/media/`. No real request was made; the first is part of ticket 27.

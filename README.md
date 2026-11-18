@@ -20,6 +20,7 @@ it was built in [`docs/process.md`](docs/process.md).
 | `list_health_checks` | Each Gatus check, failing first, with its latest response time               | `GATUS_URL`                           |
 | `recent_media`       | Films and episodes added to Jellyfin in the last 1 to 30 days                 | `JELLYFIN_URL` and `JELLYFIN_API_KEY` |
 | `download_queue`     | Sonarr and Radarr downloads, problems first, with each app's own message      | `SONARR_*` or `RADARR_*` pair         |
+| `search_media`       | Up to 10 Jellyseerr matches for a name, with whether each is available or requested | `JELLYSEERR_URL` and `JELLYSEERR_API_KEY` |
 | `read_report`        | Your scheduled status file as written, with a warning if it's out of date    | `REPORT_PATH`                         |
 
 ## Safety
@@ -107,7 +108,8 @@ Then ask things like "is anything unhealthy on the homelab?" or "why did the med
 
 Admin mode is a **second container from the same image** that can make a few specific changes to the Host: pull the
 config repo, preview and recreate one Service, start a stopped Container, reload the reverse proxy, and, with
-Sonarr or Radarr configured, retry a stuck download. Its Tools and what each refuses are in
+Sonarr or Radarr configured, retry a stuck download or import one by hand, and, with Jellyseerr configured, request a
+film or series. Its Tools and what each refuses are in
 [`docs/spec-phase-2.md`](docs/spec-phase-2.md) and [`docs/spec-phase-3.md`](docs/spec-phase-3.md). It holds Docker's real socket, which is as
 powerful as root on the Host, so keep the read-only server for everyday questions and give this one only to a Client
 that asks before each Action.
@@ -187,6 +189,7 @@ the variable but never its value.
 | `JELLYFIN_URL`, `JELLYFIN_API_KEY` | No, both or neither                    | Turn on Jellyfin. The key is only ever sent in a header                                         |
 | `SONARR_URL`, `SONARR_API_KEY`     | No, both or neither                    | Turn on Sonarr. The key is only ever sent in a header                                           |
 | `RADARR_URL`, `RADARR_API_KEY`     | No, both or neither                    | Turn on Radarr. The key is only ever sent in a header                                           |
+| `JELLYSEERR_URL`, `JELLYSEERR_API_KEY` | No, both or neither                 | Turn on Jellyseerr: `search_media`, and `request_media` in admin mode. The key is only ever sent in a header |
 | `REPORT_PATH`                      | No, turns on the Report                | The Report file's absolute path, mounted read-only                                              |
 | `REPORT_MAX_AGE_HOURS`             | No, default `26`; only with `REPORT_PATH` | Whole hours; an older Report gets a warning                                                  |
 | `ADMIN_TOKEN` | No, turns on admin mode; 32+ characters, not `MCP_TOKEN` | The Token for admin mode. The server then offers only the Allowlist, and no read Tool |
@@ -214,3 +217,5 @@ pnpm start    # runs the server; set MCP_TOKEN first
 Releases: bump `version` in `package.json`, merge, then push a matching tag (`git tag v0.1.0 && git push origin v0.1.0`).
 CI smoke-tests the image and publishes it to `ghcr.io/kallendjack/homelab-mcp:<version>`.
 `import_candidates` previews each file in a queued download using Sonarr or Radarr matches. In admin mode, `manual_import` imports matched files with no rejections and lists skipped files and reasons. It refuses when none can be imported. Both use the app and queue id from `download_queue`; both require the corresponding Sonarr or Radarr settings. Import completion reports the app command outcome; check the queue and library to confirm the files arrived.
+
+`search_media` finds a film or series in Jellyseerr by name. In admin mode, `request_media` requests one by the type and id `search_media` shows: a film, or a series with every season unless seasons are named. It refuses what Jellyseerr already has available or requested, and for a series leaves out the seasons already there, saying which.

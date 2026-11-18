@@ -14,6 +14,7 @@ import { arr } from "./sources/arr.ts";
 import { disk } from "./sources/disk.ts";
 import { docker, dockerAdmin } from "./sources/docker.ts";
 import { gatus } from "./sources/gatus.ts";
+import { jellyseerr } from "./sources/jellyseerr.ts";
 import { report } from "./sources/report.ts";
 import { socketFetch } from "./sources/socket-fetch.ts";
 import { SourceError } from "./sources/source-error.ts";
@@ -131,6 +132,26 @@ describe("the Server", () => {
     const result = await client.callTool({ name: "download_queue", arguments: {} });
     expect(result.content).toEqual([
       { type: "text", text: expect.stringMatching(/^5 downloads in the queue, 4 with problems\./) },
+    ]);
+  });
+
+  it("offers search_media with Jellyseerr on, and it works end to end", async () => {
+    const jellyseerrUrl = "http://jellyseerr.example:5055";
+    const { fetch } = fakeFetch({
+      [`${jellyseerrUrl}/api/v1/search?query=example&page=1`]: fixture("jellyseerr/search.json"),
+    });
+    const sources = {
+      docker: docker(fetch, dockerUrl),
+      disk: disk([]),
+      jellyseerr: jellyseerr(fetch, jellyseerrUrl, "test-jellyseerr-key-0000"),
+    };
+    const { url } = await start(buildTools(sources, { privateContainers: [] }));
+    const client = await connect(url);
+
+    expect((await client.listTools()).tools.map((t) => t.name)).toContain("search_media");
+    const result = await client.callTool({ name: "search_media", arguments: { name: "example" } });
+    expect(result.content).toEqual([
+      { type: "text", text: expect.stringMatching(/^Jellyseerr's top 10 for "example"./) },
     ]);
   });
 

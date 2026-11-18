@@ -1,0 +1,43 @@
+{
+  "id": 900010,
+  "name": "Old Show",
+  "firstAirDate": "2000-12-03",
+  "lastAirDate": "2025-01-01",
+  "inProduction": false,
+  "numberOfEpisodes": 20,
+  "numberOfSeasons": 2,
+  "originalLanguage": "en",
+  "originalName": "Old Show",
+  "overview": "A placeholder overview.",
+  "status": "Ended",
+  "type": "Scripted",
+  "seasons": [
+    {
+      "airDate": "2023-05-29",
+      "episodeCount": 1,
+      "id": 800000,
+      "name": "Specials",
+      "overview": "",
+      "seasonNumber": 0,
+      "posterPath": null
+    },
+    {
+      "airDate": "2023-05-29",
+      "episodeCount": 10,
+      "id": 800001,
+      "name": "Season 1",
+      "overview": "",
+      "seasonNumber": 1,
+      "posterPath": null
+    },
+    {
+      "airDate": "2023-05-29",
+      "episodeCount": 12,
+      "id": 800002,
+      "name": "Season 2",
+      "overview": "",
+      "seasonNumber": 2,
+      "posterPath": null
+    }
+  ]
+}

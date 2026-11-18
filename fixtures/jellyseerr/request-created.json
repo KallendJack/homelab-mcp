@@ -1,0 +1,44 @@
+{
+  "id": 120,
+  "status": 2,
+  "createdAt": "2026-11-10T10:00:00.000Z",
+  "updatedAt": "2026-11-10T10:00:00.000Z",
+  "type": "tv",
+  "is4k": false,
+  "serverId": null,
+  "profileId": null,
+  "rootFolder": null,
+  "languageProfileId": null,
+  "tags": null,
+  "isAutoRequest": false,
+  "seasons": [
+    {
+      "id": 130,
+      "seasonNumber": 4,
+      "status": 2,
+      "createdAt": "2026-11-10T10:00:00.000Z",
+      "updatedAt": "2026-11-10T10:00:00.000Z"
+    }
+  ],
+  "media": {
+    "downloadStatus": [],
+    "downloadStatus4k": [],
+    "id": 53,
+    "mediaType": "tv",
+    "tmdbId": 900004,
+    "tvdbId": null,
+    "imdbId": null,
+    "status": 4,
+    "status4k": 1,
+    "createdAt": "2026-11-01T10:00:00.000Z",
+    "updatedAt": "2026-11-01T10:00:00.000Z"
+  },
+  "requestedBy": {
+    "id": 1,
+    "displayName": "Placeholder Admin"
+  },
+  "modifiedBy": {
+    "id": 1,
+    "displayName": "Placeholder Admin"
+  }
+}
