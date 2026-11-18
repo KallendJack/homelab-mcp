@@ -12,16 +12,16 @@ it was built in [`docs/process.md`](docs/process.md).
 
 ## Tools
 
-| Tool                 | What the Client gets                                                              | Needs                                 |
-| -------------------- | ----------------------------------------------------------------------------- | ------------------------------------- |
-| `list_containers`    | Every container's state, status and image, the ones needing attention first  | Always on                             |
-| `container_logs`     | A container's latest log lines (up to 500), after Redaction                   | Always on                             |
-| `disk_usage`         | Percent used, and space used, free and total, for each configured path       | Always on                             |
-| `list_health_checks` | Each Gatus check, failing first, with its latest response time               | `GATUS_URL`                           |
-| `recent_media`       | Films and episodes added to Jellyfin in the last 1 to 30 days                 | `JELLYFIN_URL` and `JELLYFIN_API_KEY` |
-| `download_queue`     | Sonarr and Radarr downloads, problems first, with each app's own message      | `SONARR_*` or `RADARR_*` pair         |
+| Tool                 | What the Client gets                                                                | Needs                                     |
+| -------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------- |
+| `list_containers`    | Every container's state, status and image, the ones needing attention first         | Always on                                 |
+| `container_logs`     | A container's latest log lines (up to 500), after Redaction                         | Always on                                 |
+| `disk_usage`         | Percent used, and space used, free and total, for each configured path              | Always on                                 |
+| `list_health_checks` | Each Gatus check, failing first, with its latest response time                      | `GATUS_URL`                               |
+| `recent_media`       | Films and episodes added to Jellyfin in the last 1 to 30 days                       | `JELLYFIN_URL` and `JELLYFIN_API_KEY`     |
+| `download_queue`     | Sonarr and Radarr downloads, problems first, with each app's own message            | `SONARR_*` or `RADARR_*` pair             |
 | `search_media`       | Up to 10 Jellyseerr matches for a name, with whether each is available or requested | `JELLYSEERR_URL` and `JELLYSEERR_API_KEY` |
-| `read_report`        | Your scheduled status file as written, with a warning if it's out of date    | `REPORT_PATH`                         |
+| `read_report`        | Your scheduled status file as written, with a warning if it's out of date           | `REPORT_PATH`                             |
 
 ## Safety
 
@@ -178,29 +178,29 @@ approval: the server only narrows, previews, logs and notifies.
 Everything comes from environment variables. A bad or half-set value stops the server at start, with a message naming
 the variable but never its value.
 
-| Variable                           | Needed                                 | Meaning                                                                                         |
-| ---------------------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `MCP_TOKEN`                        | Yes, 32+ characters                    | The Token clients must send as `Authorization: Bearer <token>`                                  |
-| `PORT`                             | No, default `8765`                     | Where the server listens                                                                        |
-| `DOCKER_URL`                       | No, default `http://socket-proxy:2375` | The read-only socket proxy                                                                      |
-| `PRIVATE_CONTAINERS`               | No                                     | Comma-separated container names whose logs are never returned                                   |
-| `DISK_PATHS`                       | No, default `root=/`                   | Comma-separated `label=path` pairs: different one-word labels, absolute paths without `=` or `,`  |
-| `GATUS_URL`                        | No, turns on Gatus                     | Gatus's base URL                                                                                |
-| `JELLYFIN_URL`, `JELLYFIN_API_KEY` | No, both or neither                    | Turn on Jellyfin. The key is only ever sent in a header                                         |
-| `SONARR_URL`, `SONARR_API_KEY`     | No, both or neither                    | Turn on Sonarr. The key is only ever sent in a header                                           |
-| `RADARR_URL`, `RADARR_API_KEY`     | No, both or neither                    | Turn on Radarr. The key is only ever sent in a header                                           |
-| `JELLYSEERR_URL`, `JELLYSEERR_API_KEY` | No, both or neither                 | Turn on Jellyseerr: `search_media`, and `request_media` in admin mode. The key is only ever sent in a header |
-| `REPORT_PATH`                      | No, turns on the Report                | The Report file's absolute path, mounted read-only                                              |
-| `REPORT_MAX_AGE_HOURS`             | No, default `26`; only with `REPORT_PATH` | Whole hours; an older Report gets a warning                                                  |
-| `ADMIN_TOKEN` | No, turns on admin mode; 32+ characters, not `MCP_TOKEN` | The Token for admin mode. The server then offers only the Allowlist, and no read Tool |
-| `ADMIN_REPO_PATH` | In admin mode | The config repo's absolute path, the same inside the container as on the Host |
-| `ADMIN_COMPOSE_FILES` | In admin mode | Comma-separated `.yaml` or `.yml` paths inside the config repo, such as `proxy/compose.yaml` |
-| `ADMIN_SERVICE` | In admin mode | The admin server's own Service, which it never recreates |
-| `ADMIN_DEPLOY_KEY_FILE` | In admin mode | Absolute path to a read-only deploy key for the config repo, mounted as a Secret file. Only the path is read; Git's ssh reads the key |
-| `ADMIN_KNOWN_HOSTS_FILE` | In admin mode | Absolute path to a known_hosts file holding the Git host's SSH key (for GitHub, from its published keys), so a pull only talks to the real host |
-| `ADMIN_PROXY_CONTAINER`, `ADMIN_PROXY_RELOAD_COMMAND` | No, both or neither; turn on `reload_proxy` | The reverse proxy's Container and its own reload command as words, such as `caddy reload --config /etc/caddy/Caddyfile`. Fixed here, never chosen by the Client |
-| `NTFY_URL`, `NTFY_TOPIC` | No, both or neither, admin mode only | Where every Action's Notification goes. On a public ntfy server the topic is the only Secret: anyone with it can read the messages or send fakes |
-| `ADMIN_DOCKER_SOCKET` | No, default `/var/run/docker.sock` | Docker's own socket, mounted into the admin container only. Never give it to the read-only one (ADR 0002) |
+| Variable                                              | Needed                                                   | Meaning                                                                                                                                                         |
+| ----------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MCP_TOKEN`                                           | Yes, 32+ characters                                      | The Token clients must send as `Authorization: Bearer <token>`                                                                                                  |
+| `PORT`                                                | No, default `8765`                                       | Where the server listens                                                                                                                                        |
+| `DOCKER_URL`                                          | No, default `http://socket-proxy:2375`                   | The read-only socket proxy                                                                                                                                      |
+| `PRIVATE_CONTAINERS`                                  | No                                                       | Comma-separated container names whose logs are never returned                                                                                                   |
+| `DISK_PATHS`                                          | No, default `root=/`                                     | Comma-separated `label=path` pairs: different one-word labels, absolute paths without `=` or `,`                                                                |
+| `GATUS_URL`                                           | No, turns on Gatus                                       | Gatus's base URL                                                                                                                                                |
+| `JELLYFIN_URL`, `JELLYFIN_API_KEY`                    | No, both or neither                                      | Turn on Jellyfin. The key is only ever sent in a header                                                                                                         |
+| `SONARR_URL`, `SONARR_API_KEY`                        | No, both or neither                                      | Turn on Sonarr. The key is only ever sent in a header                                                                                                           |
+| `RADARR_URL`, `RADARR_API_KEY`                        | No, both or neither                                      | Turn on Radarr. The key is only ever sent in a header                                                                                                           |
+| `JELLYSEERR_URL`, `JELLYSEERR_API_KEY`                | No, both or neither                                      | Turn on Jellyseerr: `search_media`, and `request_media` in admin mode. The key is only ever sent in a header                                                    |
+| `REPORT_PATH`                                         | No, turns on the Report                                  | The Report file's absolute path, mounted read-only                                                                                                              |
+| `REPORT_MAX_AGE_HOURS`                                | No, default `26`; only with `REPORT_PATH`                | Whole hours; an older Report gets a warning                                                                                                                     |
+| `ADMIN_TOKEN`                                         | No, turns on admin mode; 32+ characters, not `MCP_TOKEN` | The Token for admin mode. The server then offers only the Allowlist, and no read Tool                                                                           |
+| `ADMIN_REPO_PATH`                                     | In admin mode                                            | The config repo's absolute path, the same inside the container as on the Host                                                                                   |
+| `ADMIN_COMPOSE_FILES`                                 | In admin mode                                            | Comma-separated `.yaml` or `.yml` paths inside the config repo, such as `proxy/compose.yaml`                                                                    |
+| `ADMIN_SERVICE`                                       | In admin mode                                            | The admin server's own Service, which it never recreates                                                                                                        |
+| `ADMIN_DEPLOY_KEY_FILE`                               | In admin mode                                            | Absolute path to a read-only deploy key for the config repo, mounted as a Secret file. Only the path is read; Git's ssh reads the key                           |
+| `ADMIN_KNOWN_HOSTS_FILE`                              | In admin mode                                            | Absolute path to a known_hosts file holding the Git host's SSH key (for GitHub, from its published keys), so a pull only talks to the real host                 |
+| `ADMIN_PROXY_CONTAINER`, `ADMIN_PROXY_RELOAD_COMMAND` | No, both or neither; turn on `reload_proxy`              | The reverse proxy's Container and its own reload command as words, such as `caddy reload --config /etc/caddy/Caddyfile`. Fixed here, never chosen by the Client |
+| `NTFY_URL`, `NTFY_TOPIC`                              | No, both or neither, admin mode only                     | Where every Action's Notification goes. On a public ntfy server the topic is the only Secret: anyone with it can read the messages or send fakes                |
+| `ADMIN_DOCKER_SOCKET`                                 | No, default `/var/run/docker.sock`                       | Docker's own socket, mounted into the admin container only. Never give it to the read-only one (ADR 0002)                                                       |
 
 An empty value counts as unset, so `NAME: ${NAME:-}` in a Compose file is fine.
 
@@ -219,3 +219,17 @@ CI smoke-tests the image and publishes it to `ghcr.io/kallendjack/homelab-mcp:<v
 `import_candidates` previews each file in a queued download using Sonarr or Radarr matches. In admin mode, `manual_import` imports matched files with no rejections and lists skipped files and reasons. It refuses when none can be imported. Both use the app and queue id from `download_queue`; both require the corresponding Sonarr or Radarr settings. Import completion reports the app command outcome; check the queue and library to confirm the files arrived.
 
 `search_media` finds a film or series in Jellyseerr by name. In admin mode, `request_media` requests one by the type and id `search_media` shows: a film, or a series with every season unless seasons are named. It refuses what Jellyseerr already has available or requested, and for a series leaves out the seasons already there, saying which.
+
+## Code layout
+
+| Folder                                  | What's in it                                                                    |
+| --------------------------------------- | ------------------------------------------------------------------------------- |
+| [`src/admin/`](src/admin/README.md)     | The Actions that change the Host's Services and Config repo, and the Allowlist. |
+| [`src/media/`](src/media/README.md)     | The Tools and Actions about films, series and downloads.                        |
+| [`src/sources/`](src/sources/README.md) | One module per system the server talks to.                                      |
+| [`src/testing/`](src/testing/README.md) | Fakes shared by the offline tests.                                              |
+
+The top of `src/` holds what ties them together: `main.ts` (start-up), `config.ts`, `server.ts`, `tools.ts` (the
+read Tools), `redaction.ts`, `read-report.ts` (`read_report`'s wording), and the small shared helpers `refusal.ts`,
+`bytes.ts`, `wording.ts` and `closest-names.ts`. Tests sit beside the file they cover. How the modules fit together is
+in [the architecture](docs/architecture.md).
