@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { Refusal } from "../refusal.ts";
+import { arr } from "../sources/arr.ts";
+import { type FakeAnswer, fakeFetch, fixture } from "../testing/fake-fetch.ts";
 import { importCandidates, manualImport } from "./manual-import.ts";
-import { Refusal } from "./refusal.ts";
-import { arr } from "./sources/arr.ts";
-import { type FakeAnswer, fakeFetch, fixture } from "./testing/fake-fetch.ts";
 
 const sonarrUrl = "http://sonarr.example:8989";
 const radarrUrl = "http://radarr.example:7878";

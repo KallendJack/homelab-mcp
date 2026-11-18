@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { ITEMS_PER_LIBRARY, type MediaItem, type RecentMedia } from "./sources/jellyfin.ts";
-import { count, section } from "./wording.ts";
+import { ITEMS_PER_LIBRARY, type MediaItem, type RecentMedia } from "../sources/jellyfin.ts";
+import { count, section } from "../wording.ts";
 
 /** recent_media's input: how far back to look. */
 export const recentMediaInput = z.object({

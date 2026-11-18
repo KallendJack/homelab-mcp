@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { arr } from "./sources/arr.ts";
-import { disk } from "./sources/disk.ts";
-import { docker } from "./sources/docker.ts";
-import { SourceError } from "./sources/source-error.ts";
-import { type FakeAnswer, fakeFetch, fixture } from "./testing/fake-fetch.ts";
-import { buildTools, type Sources, type Tool } from "./tools.ts";
+import { arr } from "../sources/arr.ts";
+import { disk } from "../sources/disk.ts";
+import { docker } from "../sources/docker.ts";
+import { SourceError } from "../sources/source-error.ts";
+import { type FakeAnswer, fakeFetch, fixture } from "../testing/fake-fetch.ts";
+import { buildTools, type Sources, type Tool } from "../tools.ts";
 
 const sonarrUrl = "http://sonarr.example:8989";
 const radarrUrl = "http://radarr.example:7878";

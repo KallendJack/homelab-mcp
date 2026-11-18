@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
+import { Refusal } from "../refusal.ts";
+import { type Notification, type Notifier, ntfy } from "../sources/ntfy.ts";
+import { fakeFetch } from "../testing/fake-fetch.ts";
 import { type Action, adminStartUp, allowlist } from "./allowlist.ts";
-import { Refusal } from "./refusal.ts";
-import { type Notification, type Notifier, ntfy } from "./sources/ntfy.ts";
-import { fakeFetch } from "./testing/fake-fetch.ts";
 
 /** An Action that runs until the test lets it finish. */
 function heldAction(name: string) {

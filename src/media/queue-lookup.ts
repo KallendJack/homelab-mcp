@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { Refusal } from "./refusal.ts";
-import type { Arr, QueueItem } from "./sources/arr.ts";
+import { Refusal } from "../refusal.ts";
+import type { Arr, QueueItem } from "../sources/arr.ts";
 
 /** The app and queue id that download_queue shows, as every media Tool about one download takes them. */
 export const downloadInput = {

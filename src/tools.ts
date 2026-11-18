@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { humanBytes } from "./bytes.ts";
 import { closestNames } from "./closest-names.ts";
-import { downloadQueue } from "./download-queue.ts";
-import { importCandidates } from "./manual-import.ts";
+import { downloadQueue } from "./media/download-queue.ts";
+import { importCandidates } from "./media/manual-import.ts";
+import { formatRecentMedia, recentMediaInput } from "./media/recent-media.ts";
 import { formatReport } from "./read-report.ts";
-import { formatRecentMedia, recentMediaInput } from "./recent-media.ts";
 import { Refusal } from "./refusal.ts";
 import type { Arr } from "./sources/arr.ts";
 import type { Disk, DiskFailure, DiskUsage } from "./sources/disk.ts";

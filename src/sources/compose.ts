@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { posix } from "node:path";
 import { promisify } from "node:util";
 import { z } from "zod";
-import type { ComposeModel } from "../service-plan.ts";
+import type { ComposeModel } from "../admin/service-plan.ts";
 import { SourceError, safeErrorCode } from "./source-error.ts";
 
 const execFileAsync = promisify(execFile);
