@@ -54,6 +54,9 @@ Used by `/wayfinder`. The **map** is a single issue with **child** issues as tic
 - Planned work and bugs use issues; small incidental fixes may go straight into a PR.
 - Milestones group deliverable outcomes, not priority or dependency order. Standalone work need not have one.
 - The owner chooses what to work on. Check issue comments, blockers and open PRs before starting.
-- Preserve existing issue numbers and phase labels; new titles describe the outcome without a sequence prefix.
+- New work comes from the [NAS plan](https://github.com/KallendJack/stacks/issues/160) in stacks: its tickets hold
+  the decisions, and each phase is specced and split into build tickets when it starts.
+- A phase is a milestone, named the same in each repo that has its work. No phase labels; titles describe the
+  outcome without a sequence prefix.
 - Close implemented issues through their PR with `Closes #N`.
-- Existing phase specs in `docs/spec*.md` remain authoritative for their issues.
+- The phase specs in `docs/spec*.md` record what phases 1 to 3 built and why.
