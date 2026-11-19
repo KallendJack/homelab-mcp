@@ -157,7 +157,7 @@ and error, and the author's downloads all come through them.
 Each becomes a GitHub Issue once this spec is merged.
 
 Tickets 19 to 22 were built. On 2026-11-19 tickets 23 to 27 were closed unbuilt and folded into the
-[NAS plan](https://github.com/KallendJack/stacks/issues/160): live TV's jobs are decided there first, and its build
+[homelab and AI hub plan](https://github.com/KallendJack/stacks/issues/160): live TV's jobs are decided there first, and its build
 tickets will come from that. The work started on ticket 23 (Dispatcharr's config) is kept on its branch.
 
 | #   | Ticket                              | Delivers                                                                                                  | Behaviour |
