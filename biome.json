@@ -17,7 +17,13 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "preset": "recommended"
+      "preset": "recommended",
+      "suspicious": { "noExplicitAny": "error" },
+      "style": {
+        "noNonNullAssertion": "error",
+        "useImportType": "error",
+        "noParameterAssign": "error"
+      }
     }
   },
   "javascript": {
@@ -25,5 +31,10 @@
       "quoteStyle": "double"
     }
   },
-  "extends": ["./biome.house.json"]
+  "overrides": [
+    {
+      "includes": ["**/*.md", "**/*.yaml", "**/*.yml"],
+      "formatter": { "enabled": false }
+    }
+  ]
 }

@@ -1,14 +1,16 @@
 # homelab-mcp
 
 An MCP server that lets an AI assistant, such as Claude Code, see how a self-hosted Docker homelab is doing:
-containers, logs and disk, plus Gatus health checks, recently added Jellyfin media and a daily Report when those are
-set up. It only reads, through a Docker socket proxy, so nothing it does can change a container.
+containers, logs and disk, plus Gatus health checks, Jellyfin's new media, the Sonarr and Radarr download queues,
+Jellyseerr search and a daily Report when those are set up. It only reads, through a Docker socket proxy, so nothing
+it does can change a container.
 
-An optional second container runs the same image in [admin mode](#4-admin-mode-optional), for deploys the person approves one
-by one: pull the config repo, preview and recreate one Service, start a stopped Container, reload the reverse proxy.
+An optional second container runs the same image in [admin mode](#4-admin-mode-optional), for changes the person
+approves one by one: deploys from the config repo, starting a stopped container, reloading the reverse proxy, and
+fixing or requesting media.
 
-The design is in [`docs/architecture.md`](docs/architecture.md), the vocabulary in [`GLOSSARY.md`](GLOSSARY.md), and how
-it was built in [`docs/process.md`](docs/process.md).
+How it's built is in [`docs/architecture.md`](docs/architecture.md), the vocabulary in [`GLOSSARY.md`](GLOSSARY.md),
+and the decisions in [`docs/adr/`](docs/adr/).
 
 ## Tools
 
@@ -20,8 +22,24 @@ it was built in [`docs/process.md`](docs/process.md).
 | `list_health_checks` | Each Gatus check, failing first, with its latest response time                      | `GATUS_URL`                               |
 | `recent_media`       | Films and episodes added to Jellyfin in the last 1 to 30 days                       | `JELLYFIN_URL` and `JELLYFIN_API_KEY`     |
 | `download_queue`     | Sonarr and Radarr downloads, problems first, with each app's own message            | `SONARR_*` or `RADARR_*` pair             |
+| `import_candidates`  | What a manual import would do with one download: each file's match and quality      | `SONARR_*` or `RADARR_*` pair             |
 | `search_media`       | Up to 10 Jellyseerr matches for a name, with whether each is available or requested | `JELLYSEERR_URL` and `JELLYSEERR_API_KEY` |
 | `read_report`        | Your scheduled status file as written, with a warning if it's out of date           | `REPORT_PATH`                             |
+
+Admin mode's Actions:
+
+| Action             | What it does                                                                     | Needs                                                 |
+| ------------------ | -------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `pull_config`      | Fast-forwards the config repo and says which Services' files changed             | Admin mode                                            |
+| `preview_service`  | A dry run of recreating one Service                                              | Admin mode                                            |
+| `recreate_service` | Pulls one Service's image and recreates only that Service                        | Admin mode                                            |
+| `start_container`  | Starts a stopped Container                                                       | Admin mode                                            |
+| `reload_proxy`     | Runs the reverse proxy's reload command                                          | `ADMIN_PROXY_CONTAINER`, `ADMIN_PROXY_RELOAD_COMMAND` |
+| `retry_download`   | Blocklists a stuck or failed download and has Sonarr or Radarr search again      | `SONARR_*` or `RADARR_*` pair                         |
+| `manual_import`    | Imports a download's matched files and lists the skipped ones                    | `SONARR_*` or `RADARR_*` pair                         |
+| `request_media`    | Requests a film, or a series' seasons, in Jellyseerr                             | `JELLYSEERR_URL` and `JELLYSEERR_API_KEY`             |
+
+What each Tool and Action does, and refuses, is in [the architecture](docs/architecture.md#read-tools).
 
 ## Safety
 
@@ -29,7 +47,8 @@ it was built in [`docs/process.md`](docs/process.md).
   inspecting and logs. Mounting `/var/run/docker.sock` with `:ro` is **not** read-only: it stops the file being
   replaced, not the API calls made through it ([ADR 0002](docs/adr/0002-docker-through-a-read-only-proxy.md)).
 - **A Token on every request.** Requests without it get a bare 401 ([ADR 0003](docs/adr/0003-streamable-http-with-a-bearer-token.md)).
-  Store the Token like any other Secret, and keep the server on your home network or tailnet; it isn't built to face the internet.
+  Store the Token like any other Secret, and keep the server on your home network or tailnet; it isn't built to face
+  the internet.
 - **Redaction.** Everything the server returns, error messages included, has anything that looks like a Secret (a
   password, token or key) replaced with `[redacted]` first.
 - **Private containers.** Name containers whose logs hold personal text (a chat bridge, a finance tracker) in
@@ -64,8 +83,7 @@ Don't publish its port to your network: homelab-mcp reaches it by name on a shar
 
 ### 2. The server
 
-A Token is any random string of at least 32 characters, such as the output of `openssl rand -hex 32`. Store it like
-any other Secret.
+A Token is any random string of at least 32 characters, such as the output of `openssl rand -hex 32`.
 
 ```yaml
 services:
@@ -106,13 +124,9 @@ Then ask things like "is anything unhealthy on the homelab?" or "why did the med
 
 ### 4. Admin mode (optional)
 
-Admin mode is a **second container from the same image** that can make a few specific changes to the Host: pull the
-config repo, preview and recreate one Service, start a stopped Container, reload the reverse proxy, and, with
-Sonarr or Radarr configured, retry a stuck download or import one by hand, and, with Jellyseerr configured, request a
-film or series. Its Tools and what each refuses are in
-[`docs/spec-phase-2.md`](docs/spec-phase-2.md) and [`docs/spec-phase-3.md`](docs/spec-phase-3.md). It holds Docker's real socket, which is as
-powerful as root on the Host, so keep the read-only server for everyday questions and give this one only to a Client
-that asks before each Action.
+Admin mode is a **second container from the same image** that offers only the Actions above. It holds Docker's real
+socket, which is as powerful as root on the Host, so keep the read-only server for everyday questions and give this
+one only to a Client that asks before each Action.
 
 ```yaml
 services:
@@ -132,7 +146,7 @@ services:
       ADMIN_PROXY_RELOAD_COMMAND: caddy reload --config /etc/caddy/Caddyfile
       NTFY_URL: https://ntfy.sh
       NTFY_TOPIC: ${NTFY_TOPIC:?}
-      # Optional: retry_download, with the same settings as the read-only server.
+      # Optional: the media Actions, with the same settings as the read-only server.
       SONARR_URL: http://sonarr:8989
       SONARR_API_KEY: ${SONARR_API_KEY:?}
     volumes:
@@ -158,8 +172,6 @@ services:
 - **The config repo** must be cloned over SSH (`git@github.com:...`) and owned by uid 1000, the image's user. A NAS
   share's ACL can still refuse that uid on its own: if `docker exec homelab-mcp-admin ls <repo path>` says
   "Permission denied", add the group the share grants (often the owner's own group) to `group_add`.
-- **Tried for real** on the author's Host (2026-11-14, version 0.2.1): `pull_config`, `preview_service`,
-  `recreate_service` and `reload_proxy`. `start_container` waits for a Container that really didn't come back.
 - **Its own Service:** `recreate_service` refuses it, since recreating yourself kills the request doing it. Update
   this container from the Host.
 
@@ -176,7 +188,7 @@ approval: the server only narrows, previews, logs and notifies.
 ## Config
 
 Everything comes from environment variables. A bad or half-set value stops the server at start, with a message naming
-the variable but never its value.
+the variable but never its value. An empty value counts as unset, so `NAME: ${NAME:-}` in a Compose file is fine.
 
 | Variable                                              | Needed                                                   | Meaning                                                                                                                                                         |
 | ----------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -202,8 +214,6 @@ the variable but never its value.
 | `NTFY_URL`, `NTFY_TOPIC`                              | No, both or neither, admin mode only                     | Where every Action's Notification goes. On a public ntfy server the topic is the only Secret: anyone with it can read the messages or send fakes                |
 | `ADMIN_DOCKER_SOCKET`                                 | No, default `/var/run/docker.sock`                       | Docker's own socket, mounted into the admin container only. Never give it to the read-only one (ADR 0002)                                                       |
 
-An empty value counts as unset, so `NAME: ${NAME:-}` in a Compose file is fine.
-
 ## Development
 
 Needs Node 24 and pnpm (the version is pinned in `package.json`).
@@ -216,20 +226,19 @@ pnpm start    # runs the server; set MCP_TOKEN first
 
 Releases: bump `version` in `package.json`, merge, then push a matching tag (`git tag v0.1.0 && git push origin v0.1.0`).
 CI smoke-tests the image and publishes it to `ghcr.io/kallendjack/homelab-mcp:<version>`.
-`import_candidates` previews each file in a queued download using Sonarr or Radarr matches. In admin mode, `manual_import` imports matched files with no rejections and lists skipped files and reasons. It refuses when none can be imported. Both use the app and queue id from `download_queue`; both require the corresponding Sonarr or Radarr settings. Import completion reports the app command outcome; check the queue and library to confirm the files arrived.
-
-`search_media` finds a film or series in Jellyseerr by name. In admin mode, `request_media` requests one by the type and id `search_media` shows: a film, or a series with every season unless seasons are named. It refuses what Jellyseerr already has available or requested, and for a series leaves out the seasons already there, saying which.
 
 ## Code layout
 
 | Folder                                  | What's in it                                                                    |
 | --------------------------------------- | ------------------------------------------------------------------------------- |
+| [`src/`](src/)                          | The server. Its top level ties the folders below together.                      |
 | [`src/admin/`](src/admin/README.md)     | The Actions that change the Host's Services and Config repo, and the Allowlist. |
 | [`src/media/`](src/media/README.md)     | The Tools and Actions about films, series and downloads.                        |
 | [`src/sources/`](src/sources/README.md) | One module per system the server talks to.                                      |
 | [`src/testing/`](src/testing/README.md) | Fakes shared by the offline tests.                                              |
+| [`fixtures/`](fixtures/README.md)       | The recorded and hand-written answers the tests' fake `fetch` gives.            |
+| [`docs/`](docs/)                        | The architecture, the ADRs, and the config Matt Pocock's skills read.           |
 
-The top of `src/` holds what ties them together: `main.ts` (start-up), `config.ts`, `server.ts`, `tools.ts` (the
-read Tools), `redaction.ts`, `read-report.ts` (`read_report`'s wording), and the small shared helpers `refusal.ts`,
-`bytes.ts`, `wording.ts` and `closest-names.ts`. Tests sit beside the file they cover. How the modules fit together is
-in [the architecture](docs/architecture.md).
+The top of `src/` holds `main.ts` (start-up), `config.ts`, `server.ts`, `tools.ts` (the read Tools), `redaction.ts`,
+`read-report.ts` (`read_report`'s wording), and the small shared helpers `refusal.ts`, `bytes.ts`, `wording.ts` and
+`closest-names.ts`. Tests sit beside the file they cover.
