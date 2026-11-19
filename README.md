@@ -241,4 +241,18 @@ CI smoke-tests the image and publishes it to `ghcr.io/kallendjack/homelab-mcp:<v
 
 The top of `src/` holds `main.ts` (start-up), `config.ts`, `server.ts`, `tools.ts` (the read Tools), `redaction.ts`,
 `read-report.ts` (`read_report`'s wording), and the small shared helpers `refusal.ts`, `bytes.ts`, `wording.ts` and
-`closest-names.ts`. Tests sit beside the file they cover.
+`closest-names.ts`.
+
+### Where a new Tool goes
+
+Keep related Tools and Actions together by subject. For example, [manual-import.ts](src/media/manual-import.ts)
+holds both the Tool that previews an import and the Action that performs it. The code that talks to Sonarr
+and Radarr and parses their responses lives in [arr.ts](src/sources/arr.ts). Put behaviour tests beside the
+module they cover and sample responses under `fixtures/` in the folder for the system that returned them.
+
+Register a read Tool in [tools.ts](src/tools.ts). Wire an Action into the [Allowlist](src/admin/allowlist.ts)
+in [main.ts](src/main.ts), including when the Action lives in a subject folder such as `src/media/`.
+
+Start a subject folder when a feature introduces related Tools with their own vocabulary. For example, when
+live TV Tools for Channels and the Guide land, their handlers can live in `src/live-tv/` and the code that
+talks to Dispatcharr in `src/sources/`. Add the folder with the first implementation.
