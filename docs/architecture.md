@@ -18,6 +18,9 @@ one MCP route.
   a read Tool. It needs its own Token; config refuses the read-only Token as the admin one, since one Token would let
   any read-only Client perform Actions.
 
+Deleting data, pruning, running arbitrary commands, editing files and stopping Services are never Actions: they stay
+with a person at the Host.
+
 `main.ts` loads Config, builds the Sources that are on, builds the Tools (or the Allowlist), and starts the Server.
 Each optional Source is on when its settings are set, and its Tools exist only while it's on
 ([ADR 0001](adr/0001-optional-sources-not-plugins.md)).
@@ -27,9 +30,9 @@ Each optional Source is on when its settings are set, and its Tools exist only w
 | Module | What it does | Interface |
 | --- | --- | --- |
 | **Config** | Reads the environment once and checks it with Zod. Empty counts as unset. A bad or half-set value stops the server at start, naming the variable, never its value. | `loadConfig(env) → Config` |
-| **Server** | Checks the Token on every request (constant time; a bare 401 otherwise), serves MCP over stateless Streamable HTTP ([ADR 0003](adr/0003-streamable-http-with-a-bearer-token.md)), runs every answer and error through Redaction, and logs each call. `/healthz` answers without a Token. | `startServer(config, tools) → { url, close() }` |
+| **Server** | Checks the Token on every request (constant time; a bare 401 otherwise), serves MCP over stateless Streamable HTTP ([ADR 0003](adr/0003-streamable-http-with-a-bearer-token.md)), runs every answer and error through Redaction, and logs each call (see [Logs](#logs)). `/healthz` answers without a Token. | `startServer(config, tools) → { url, close() }` |
 | **Tools** | The read Tools of the Sources that are on: name, description, input schema, and a handler that formats plain text for the Client. | `buildTools(sources, { privateContainers }) → Tool[]` |
-| **Allowlist** | Turns Actions into admin mode's Tools: marks each as changing the Host, runs one at a time, applies its time limit, logs its arguments and answer, and sends its Notification. Also the admin start-up line. | `allowlist(actions, { notifier }) → Tool[]` |
+| **Allowlist** | Turns Actions into admin mode's Tools: marks each as changing the Host, so the Server logs its arguments and answer, runs one at a time, applies its time limit, and sends its Notification. Also the admin start-up line. | `allowlist(actions, { notifier }) → Tool[]` |
 | **Redaction** | Replaces anything that looks like a Secret with `[redacted]`. Pure code. | `redact(text) → text` |
 | **Docker** | Containers and their logs through the proxy, hiding the 8-byte frame headers on log streams. In admin mode, also start and exec. | `docker(fetch, url)`, `dockerAdmin(fetch, url)` |
 | **Compose** | Runs `docker compose` against one Compose file: config hashes, the dry run, and the recreate. | `compose(settings)` |
@@ -42,6 +45,14 @@ Each optional Source is on when its settings are set, and its Tools exist only w
 | **ntfy** | Sends a Notification. | `ntfy(fetch, url, topic)` |
 
 What each file holds is in the [code layout](../README.md#code-layout) and its folder READMEs.
+
+## A call, end to end
+
+1. The Client sends an MCP request to `/mcp` with `Authorization: Bearer <Token>`. A missing or wrong Token gets a
+   401 and nothing else.
+2. The Server hands it to a fresh, stateless Streamable HTTP transport, which calls the Tool.
+3. The Tool asks its Source, which calls the system over HTTP or reads a file.
+4. The Tool formats the answer; the Server runs it through Redaction and returns it.
 
 ## Seams
 
@@ -63,10 +74,10 @@ Compose is a real process; tests run a fake `docker compose` script chosen by th
 | `disk_usage` | Disk | Percent used, and space used, free and total, per configured path. Percent is counted as df counts it. |
 | `list_health_checks` | Gatus | Each Health check's group, name, pass or fail, and latest response time; failing first. Gatus's own error text is never returned, since it names hosts. |
 | `recent_media` | Jellyfin | Media items added in the last `days` days (1 to 30, default 1): films with their year, then episodes grouped by series. Folder tags such as `{tvdb-438604}` are removed. |
-| `download_queue` | Sonarr, Radarr | Both queues together, problems first (failed, import blocked or pending, stalled), then downloading with progress. A season pack is grouped into one download showing its worst episode's state. One app that can't be read becomes a sentence above the other's list. |
+| `download_queue` | Sonarr, Radarr | Both queues together, problems first (failed, import blocked or pending, stalled), then downloading with progress. Each line starts with the app and the queue id the Actions take; an empty queue says so. A season pack is grouped into one download showing its worst episode's state. One app that can't be read becomes a sentence above the other's list. |
 | `import_candidates` | Sonarr, Radarr | For one download, each video file with what the app matched, its quality and any rejection reasons. Imports nothing. |
 | `search_media` | Jellyseerr | Up to 10 films and series for a name, with availability (available, partly available, requested, not requested) and the id `request_media` needs. Every reserved character in the query is encoded, since Jellyseerr refuses them otherwise. |
-| `read_report` | Report | The Report exactly as written, with when it was written, and a warning first if it's stale. Capped at 200 kB. |
+| `read_report` | Report | The Report exactly as written, with when it was written, and a warning first if it's stale. Capped at 200 kB; a missing file is a plain error. |
 
 ## Actions
 
@@ -75,11 +86,11 @@ Each is offered in admin mode only, and only when its settings are on.
 | Action | What it does |
 | --- | --- |
 | `pull_config` | Fast-forwards the Config repo to its remote's default branch with the read-only deploy key, and returns the old and new commit, the changed files and the Services they affect. Refuses, changing nothing, with local changes or a history that has moved apart. |
-| `preview_service` | A Dry run: what recreating one Service would create, recreate or leave alone. What changes comes from Compose's config hash against each Container's label; Compose's own dry-run text is shown, not parsed. |
+| `preview_service` | A Dry run: what recreating one Service would create, recreate or leave alone. What changes comes from Compose's config hash against each Container's label; Compose's own dry-run text is shown, not parsed. An unknown Service gets the closest names. |
 | `recreate_service` | Pulls the Service's image and recreates only that Service (`--no-deps`), then waits up to two minutes for it to be running, and healthy if it has a healthcheck. Refuses if other Services would be disturbed (sharing its network, or restarting with it), and refuses admin mode's own Service. |
 | `start_container` | Starts a stopped Container. Refuses one already running, or unknown (with the closest names). |
-| `reload_proxy` | Runs the reverse proxy's reload command, fixed in config, in its Container through Docker's exec, and says whether the new config was accepted. |
-| `retry_download` | Removes one download from Sonarr's or Radarr's queue and the download client, blocklists the release and asks the app to search again (saying whether the app's Redownload Failed setting is on). Refuses a download whose files have already arrived, pointing to `manual_import`, unless `discard_downloaded` is set. |
+| `reload_proxy` | Runs the reverse proxy's reload command, fixed in config, in its Container through Docker's exec, and says whether the new config was accepted. A rejected config leaves the old one running, and the answer says why. |
+| `retry_download` | Removes one download from Sonarr's or Radarr's queue and the download client, blocklists the release, naming it, and asks the app to search again (saying whether the app's Redownload Failed setting is on). Refuses a download whose files have already arrived, pointing to `manual_import`, unless `discard_downloaded` is set. |
 | `manual_import` | Imports a download's matched files with no rejections, lists the skipped files with their reasons, and follows the import to its end. Refuses when no file can be imported. |
 | `request_media` | Requests a film, or a series' seasons (every season unless named), in Jellyseerr. Refuses what's already available or requested; for a series, leaves out the seasons already there and says which. Specials are never requested. |
 
@@ -93,6 +104,14 @@ Every Action:
   through, and the lock is held until the work really ends.
 - **Sends one Notification** when it really ends, with Notifications on. One that can't be sent is logged and
   doesn't fail the Action.
+
+## Logs
+
+- **At start**, the read-only server logs which Sources are on and the Private containers; admin mode logs the
+  Allowlist, the Config repo path, whether Notifications are on and which media Sources are on. Never a Secret.
+- **Each call** is logged with its name, how long it took and whether it succeeded. A read Tool's arguments are logged
+  only for `container_logs` (the Container name), and its answer never; an Action's arguments and whole answer are
+  logged on one line. A Refusal can carry a detail for the log only, such as Git's own error.
 
 ## Safety
 

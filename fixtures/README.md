@@ -2,8 +2,8 @@
 
 The answers the tests' fake `fetch` gives, one folder per Source. Part of the [code layout](../README.md#code-layout).
 
-A file whose name ends in `-recorded` was recorded from a real Host and scrubbed: hostnames, IPs, names that identify
-a person, titles and every Secret replaced. The rest are hand-written in the shape of the real API, with placeholder
+A file whose name ends in `-recorded` was recorded from a real Host, with its hostnames, IPs, names that identify a
+person, titles and every Secret replaced. The rest are hand-written in the shape of the real API, with placeholder
 names, ids and images, for cases a healthy Host doesn't show.
 
 ## Docker
@@ -34,11 +34,12 @@ the tests check.
 
 ## Sonarr and Radarr
 
-- `queue-empty-recorded.json`: an empty queue, recorded 2026-11-17 (Sonarr 4.0.17, Radarr 6.2.1); only the page
-  size was changed to the one the server asks for.
-- `queue.json`: downloading, stalled, import blocked, failed and import pending, and a season pack listed once per
-  episode (records 103 and 106 share a download).
-- `manualimport.json`: the files a manual import would take, matched and rejected.
+- `queue-empty-recorded.json`, in each folder: an empty queue, recorded 2026-11-17 (Sonarr 4.0.17, Radarr 6.2.1);
+  only the page size was changed to the one the server asks for.
+- `sonarr/queue.json`: downloading, stalled, import blocked, failed and import pending, and a season pack listed once
+  per episode (records 103 and 106 share a download).
+- `radarr/queue.json`: one film downloading and one import blocked.
+- `manualimport.json`, in each folder: the files a manual import would take, matched and rejected.
 
 ## Jellyseerr
 

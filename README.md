@@ -237,7 +237,7 @@ CI smoke-tests the image and publishes it to `ghcr.io/kallendjack/homelab-mcp:<v
 | [`src/sources/`](src/sources/README.md) | One module per system the server talks to.                                      |
 | [`src/testing/`](src/testing/README.md) | Fakes shared by the offline tests.                                              |
 | [`fixtures/`](fixtures/README.md)       | The recorded and hand-written answers the tests' fake `fetch` gives.            |
-| [`docs/`](docs/architecture.md)         | The architecture, the ADRs, and the config Matt Pocock's skills read.           |
+| [`docs/`](docs/)                        | The architecture, the ADRs, and the config Matt Pocock's skills read.           |
 
 The top of `src/` holds `main.ts` (start-up), `config.ts`, `server.ts`, `tools.ts` (the read Tools), `redaction.ts`,
 `read-report.ts` (`read_report`'s wording), and the small shared helpers `refusal.ts`, `bytes.ts`, `wording.ts` and
