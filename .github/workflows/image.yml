@@ -31,6 +31,8 @@ jobs:
           done
           docker logs smoke
           test "$status" = healthy
+          # No media Source without its variables.
+          docker logs smoke | grep -q "Sources on: Docker, Disk (root)\. "
           # The MCP route is there and refuses a request without the Token.
           test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8765/mcp)" = 401
       - name: Has admin mode's tools
@@ -65,6 +67,37 @@ jobs:
           test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8766/mcp)" = 401
           # Compose, as the unprivileged user, through the real socket.
           docker exec admin docker compose -f "$RUNNER_TEMP/stacks/ops/compose.yaml" config --hash homelab-mcp-admin
+      - name: Starts with the media Sources set, in both modes, offering their Tools and Actions
+        run: |
+          # Nothing answers at these addresses: a Source is only reached when a Tool or Action is called.
+          media=(-e SONARR_URL=http://sonarr.invalid:8989 -e SONARR_API_KEY=smoke-sonarr-key
+                 -e RADARR_URL=http://radarr.invalid:7878 -e RADARR_API_KEY=smoke-radarr-key
+                 -e JELLYSEERR_URL=http://jellyseerr.invalid:5055 -e JELLYSEERR_API_KEY=smoke-jellyseerr-key)
+          docker run -d --name smoke-media --read-only --cap-drop ALL --security-opt no-new-privileges \
+            -p 8767:8765 -e MCP_TOKEN=smoke-test-token-0123456789-0123456789 "${media[@]}" homelab-mcp:test
+          docker run -d --name admin-media --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges \
+            --group-add "$(stat -c %g /var/run/docker.sock)" \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$RUNNER_TEMP/stacks:$RUNNER_TEMP/stacks" -v "$RUNNER_TEMP/secrets:/run/secrets:ro" \
+            -p 8768:8765 \
+            -e MCP_TOKEN=smoke-test-token-0123456789-0123456789 \
+            -e ADMIN_TOKEN=smoke-admin-token-0123456789-0123456789 \
+            -e ADMIN_REPO_PATH="$RUNNER_TEMP/stacks" -e ADMIN_COMPOSE_FILES=ops/compose.yaml \
+            -e ADMIN_SERVICE=homelab-mcp-admin \
+            -e ADMIN_DEPLOY_KEY_FILE=/run/secrets/deploy-key -e ADMIN_KNOWN_HOSTS_FILE=/run/secrets/known-hosts \
+            "${media[@]}" homelab-mcp:test
+          for name in smoke-media admin-media; do
+            for _ in $(seq 1 30); do
+              status=$(docker inspect -f '{{.State.Health.Status}}' "$name")
+              [ "$status" = healthy ] && break
+              sleep 2
+            done
+            docker logs "$name"
+            test "$status" = healthy
+          done
+          docker logs smoke-media | grep -q "Sources on: Docker, Disk (root), Sonarr, Radarr, Jellyseerr\. "
+          docker logs admin-media | grep -q "Allowlist: pull_config, preview_service, recreate_service, start_container, retry_download, manual_import, request_media\. "
+          docker logs admin-media | grep -q "Media Sources: Sonarr, Radarr, Jellyseerr\."
 
   publish:
     if: startsWith(github.ref, 'refs/tags/v')
