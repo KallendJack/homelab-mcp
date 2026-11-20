@@ -1,5 +1,5 @@
 import type { Report } from "./sources/report.ts";
-import { count } from "./wording.ts";
+import { count, utcMinute } from "./wording.ts";
 
 /** The Report as written, after when it was written, and a warning first if it's a Stale report. */
 export function formatReport(report: Report): string {
@@ -15,11 +15,6 @@ export function formatReport(report: Report): string {
       ]
     : [];
   return [...warning, written, "", report.text].join("\n");
-}
-
-/** "2026-09-30 06:00 UTC": the Host's own time zone isn't known here. */
-function utcMinute(date: Date): string {
-  return `${date.toISOString().slice(0, 16).replace("T", " ")} UTC`;
 }
 
 /**

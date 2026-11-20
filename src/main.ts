@@ -11,6 +11,7 @@ import { type RunningServer, startServer } from "./server.ts";
 import { type Arr, arr } from "./sources/arr.ts";
 import { compose } from "./sources/compose.ts";
 import { disk } from "./sources/disk.ts";
+import { dispatcharr } from "./sources/dispatcharr.ts";
 import { docker, dockerAdmin } from "./sources/docker.ts";
 import { gatus } from "./sources/gatus.ts";
 import { jellyfin } from "./sources/jellyfin.ts";
@@ -47,6 +48,9 @@ async function startReadOnly(config: Config): Promise<RunningServer> {
       : {}),
     ...(config.jellyseerr
       ? { jellyseerr: jellyseerr(fetch, config.jellyseerr.url, config.jellyseerr.apiKey) }
+      : {}),
+    ...(config.dispatcharr
+      ? { dispatcharr: dispatcharr(fetch, config.dispatcharr.url, config.dispatcharr.apiKey) }
       : {}),
     ...(config.report
       ? { report: report(config.report.path, config.report.maxAgeHours, () => new Date()) }

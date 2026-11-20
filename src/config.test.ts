@@ -110,6 +110,31 @@ describe("loadConfig", () => {
     expect(error.message).not.toContain("secret-api-key-value");
   });
 
+  it("turns Dispatcharr on with its URL and API key, dropping a trailing slash", () => {
+    expect(loadConfig({ MCP_TOKEN: token }).dispatcharr).toBeUndefined();
+    const config = loadConfig({
+      MCP_TOKEN: token,
+      DISPATCHARR_URL: "http://dispatcharr.example:9191/",
+      DISPATCHARR_API_KEY: "test-dispatcharr-key",
+    });
+    expect(config.dispatcharr).toEqual({
+      url: "http://dispatcharr.example:9191",
+      apiKey: "test-dispatcharr-key",
+    });
+    expect(sourcesOn(config)).toBe("Docker, Disk (root), Dispatcharr");
+  });
+
+  it.each([
+    { DISPATCHARR_URL: "http://dispatcharr.example:9191" },
+    { DISPATCHARR_API_KEY: "secret-api-key-value" },
+  ])("refuses half of the Dispatcharr pair, never echoing the key (%o)", (settings) => {
+    const error = catchError(() => loadConfig({ MCP_TOKEN: token, ...settings }));
+    expect(error.message).toBe(
+      "DISPATCHARR_URL and DISPATCHARR_API_KEY must be set together, or neither",
+    );
+    expect(error.message).not.toContain("secret-api-key-value");
+  });
+
   it("refuses a Sonarr or Radarr URL that isn't http or https", () => {
     const error = catchError(() =>
       loadConfig({ MCP_TOKEN: token, RADARR_URL: "ftp://radarr.example", RADARR_API_KEY: "k" }),

@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { Refusal } from "./refusal.ts";
 import { type DiskPath, disk } from "./sources/disk.ts";
+import { dispatcharr } from "./sources/dispatcharr.ts";
 import { docker } from "./sources/docker.ts";
 import { gatus } from "./sources/gatus.ts";
 import { jellyfin } from "./sources/jellyfin.ts";
@@ -698,5 +699,25 @@ describe("read_report", () => {
     await expect(readReport(join(folder, "morning.txt")).handler({})).rejects.toThrow(
       new SourceError("There's no Report file yet."),
     );
+  });
+});
+
+describe("the live TV Tools", () => {
+  it("are offered only when the Dispatcharr Source is on", () => {
+    const { fetch } = fakeFetch({});
+    const names = (on: boolean) =>
+      buildTools(
+        {
+          docker: docker(fetch, dockerUrl),
+          disk: disk([]),
+          ...(on
+            ? { dispatcharr: dispatcharr(fetch, "http://dispatcharr.example:9191", "k") }
+            : {}),
+        },
+        { privateContainers: [] },
+      ).map((t) => t.name);
+    const liveTv = ["find_channel", "search_guide", "m3u_accounts"];
+    for (const name of liveTv) expect(names(false)).not.toContain(name);
+    expect(names(true)).toEqual(expect.arrayContaining(liveTv));
   });
 });

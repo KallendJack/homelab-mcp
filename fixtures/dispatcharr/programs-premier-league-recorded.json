@@ -1,0 +1,452 @@
+{
+  "count": 9,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 19255011,
+      "title": "Premier League fixture 6",
+      "sub_title": null,
+      "description": "Example programme.",
+      "start_time": "2026-11-20T17:00:00Z",
+      "end_time": "2026-11-20T18:00:00Z",
+      "tvg_id": "SkySportsNews.uk",
+      "custom_properties": null,
+      "epg_source": "IPTV",
+      "epg_name": "VIP: SKY SPORTS NEWS ᴴᴰ",
+      "epg_icon_url": null,
+      "channels": [
+        {
+          "id": 7612,
+          "name": "Sky Sports News HD",
+          "channel_number": 409,
+          "channel_group": "Sky: Sports",
+          "tvg_id": null
+        }
+      ],
+      "streams": [
+        {
+          "id": 44992,
+          "name": "UK: SKY SPORTS NEWS HEVC 4K",
+          "channel_group": "UK| SPORT ʰᵉᵛᶜ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44948,
+          "name": "UK: SKY SPORTS NEWS HEVC HD",
+          "channel_group": "UK| SPORT ʰᵉᵛᶜ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44882,
+          "name": "UK: SKY SPORTS NEWS ᴴᴰ ◉",
+          "channel_group": "UK| SPORT ᴴᴰ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44839,
+          "name": "VIP: SKY SPORTS NEWS ᴴᴰ ʰᵉᵛᶜ",
+          "channel_group": "UK| SPORT ᴴᴰ ⱽᴵᴾ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44792,
+          "name": "VIP: SKY SPORTS NEWS ᴴᴰ",
+          "channel_group": "UK| SPORT ᴴᴰ ⱽᴵᴾ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        }
+      ]
+    },
+    {
+      "id": 19255012,
+      "title": "Premier League fixture 1",
+      "sub_title": null,
+      "description": "Example programme.",
+      "start_time": "2026-11-20T17:00:00Z",
+      "end_time": "2026-11-20T18:00:00Z",
+      "tvg_id": "SkySportsNews.uk",
+      "custom_properties": null,
+      "epg_source": "IPTV",
+      "epg_name": "VIP: SKY SPORTS NEWS ᴴᴰ",
+      "epg_icon_url": null,
+      "channels": [
+        {
+          "id": 7612,
+          "name": "Sky Sports News HD",
+          "channel_number": 409,
+          "channel_group": "Sky: Sports",
+          "tvg_id": null
+        }
+      ],
+      "streams": [
+        {
+          "id": 44992,
+          "name": "UK: SKY SPORTS NEWS HEVC 4K",
+          "channel_group": "UK| SPORT ʰᵉᵛᶜ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44948,
+          "name": "UK: SKY SPORTS NEWS HEVC HD",
+          "channel_group": "UK| SPORT ʰᵉᵛᶜ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44882,
+          "name": "UK: SKY SPORTS NEWS ᴴᴰ ◉",
+          "channel_group": "UK| SPORT ᴴᴰ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44839,
+          "name": "VIP: SKY SPORTS NEWS ᴴᴰ ʰᵉᵛᶜ",
+          "channel_group": "UK| SPORT ᴴᴰ ⱽᴵᴾ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44792,
+          "name": "VIP: SKY SPORTS NEWS ᴴᴰ",
+          "channel_group": "UK| SPORT ᴴᴰ ⱽᴵᴾ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        }
+      ]
+    },
+    {
+      "id": 19255014,
+      "title": "Premier League fixture 1",
+      "sub_title": null,
+      "description": "Example programme.",
+      "start_time": "2026-11-20T18:00:00Z",
+      "end_time": "2026-11-20T19:00:00Z",
+      "tvg_id": "SkySportsNews.uk",
+      "custom_properties": null,
+      "epg_source": "IPTV",
+      "epg_name": "VIP: SKY SPORTS NEWS ᴴᴰ",
+      "epg_icon_url": null,
+      "channels": [
+        {
+          "id": 7612,
+          "name": "Sky Sports News HD",
+          "channel_number": 409,
+          "channel_group": "Sky: Sports",
+          "tvg_id": null
+        }
+      ],
+      "streams": [
+        {
+          "id": 44992,
+          "name": "UK: SKY SPORTS NEWS HEVC 4K",
+          "channel_group": "UK| SPORT ʰᵉᵛᶜ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44948,
+          "name": "UK: SKY SPORTS NEWS HEVC HD",
+          "channel_group": "UK| SPORT ʰᵉᵛᶜ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44882,
+          "name": "UK: SKY SPORTS NEWS ᴴᴰ ◉",
+          "channel_group": "UK| SPORT ᴴᴰ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44839,
+          "name": "VIP: SKY SPORTS NEWS ᴴᴰ ʰᵉᵛᶜ",
+          "channel_group": "UK| SPORT ᴴᴰ ⱽᴵᴾ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44792,
+          "name": "VIP: SKY SPORTS NEWS ᴴᴰ",
+          "channel_group": "UK| SPORT ᴴᴰ ⱽᴵᴾ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        }
+      ]
+    },
+    {
+      "id": 19255013,
+      "title": "Premier League fixture 6",
+      "sub_title": null,
+      "description": "Example programme.",
+      "start_time": "2026-11-20T18:00:00Z",
+      "end_time": "2026-11-20T19:00:00Z",
+      "tvg_id": "SkySportsNews.uk",
+      "custom_properties": null,
+      "epg_source": "IPTV",
+      "epg_name": "VIP: SKY SPORTS NEWS ᴴᴰ",
+      "epg_icon_url": null,
+      "channels": [
+        {
+          "id": 7612,
+          "name": "Sky Sports News HD",
+          "channel_number": 409,
+          "channel_group": "Sky: Sports",
+          "tvg_id": null
+        }
+      ],
+      "streams": [
+        {
+          "id": 44992,
+          "name": "UK: SKY SPORTS NEWS HEVC 4K",
+          "channel_group": "UK| SPORT ʰᵉᵛᶜ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44948,
+          "name": "UK: SKY SPORTS NEWS HEVC HD",
+          "channel_group": "UK| SPORT ʰᵉᵛᶜ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44882,
+          "name": "UK: SKY SPORTS NEWS ᴴᴰ ◉",
+          "channel_group": "UK| SPORT ᴴᴰ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44839,
+          "name": "VIP: SKY SPORTS NEWS ᴴᴰ ʰᵉᵛᶜ",
+          "channel_group": "UK| SPORT ᴴᴰ ⱽᴵᴾ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44792,
+          "name": "VIP: SKY SPORTS NEWS ᴴᴰ",
+          "channel_group": "UK| SPORT ᴴᴰ ⱽᴵᴾ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        }
+      ]
+    },
+    {
+      "id": 19254913,
+      "title": "Premier League fixture 4",
+      "sub_title": null,
+      "description": "Example programme.",
+      "start_time": "2026-11-21T10:00:00Z",
+      "end_time": "2026-11-21T11:30:00Z",
+      "tvg_id": "SkySportsMainEvent.uk",
+      "custom_properties": null,
+      "epg_source": "IPTV",
+      "epg_name": "VIP: SKY SPORTS MAIN EVENT ᴴᴰ",
+      "epg_icon_url": null,
+      "channels": [
+        {
+          "id": 7604,
+          "name": "Sky Sports Main Event UHD",
+          "channel_number": 401,
+          "channel_group": "Sky: Sports",
+          "tvg_id": null
+        }
+      ],
+      "streams": [
+        {
+          "id": 44843,
+          "name": "VIP: SKY SPORTS MAIN EVENT ᴴᴰ ʰᵉᵛᶜ",
+          "channel_group": "UK| SPORT ᴴᴰ ⱽᴵᴾ",
+          "tvg_id": "SkySportsMainEvent.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44796,
+          "name": "VIP: SKY SPORTS MAIN EVENT ᴴᴰ",
+          "channel_group": "UK| SPORT ᴴᴰ ⱽᴵᴾ",
+          "tvg_id": "SkySportsMainEvent.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44729,
+          "name": "NOW: SKY SPORTS MAIN EVENT ᵁᴴᴰ ³⁸⁴⁰ᴾ",
+          "channel_group": "UK| NOW TV SPORT ᵁᴴᴰ ³⁸⁴⁰ᴾ",
+          "tvg_id": "",
+          "m3u_account": "IPTV"
+        }
+      ]
+    },
+    {
+      "id": 19255040,
+      "title": "Premier League fixture 4",
+      "sub_title": null,
+      "description": "Example programme.",
+      "start_time": "2026-11-21T10:00:00Z",
+      "end_time": "2026-11-21T11:30:00Z",
+      "tvg_id": "SkySportsNews.uk",
+      "custom_properties": null,
+      "epg_source": "IPTV",
+      "epg_name": "VIP: SKY SPORTS NEWS ᴴᴰ",
+      "epg_icon_url": null,
+      "channels": [
+        {
+          "id": 7612,
+          "name": "Sky Sports News HD",
+          "channel_number": 409,
+          "channel_group": "Sky: Sports",
+          "tvg_id": null
+        }
+      ],
+      "streams": [
+        {
+          "id": 44992,
+          "name": "UK: SKY SPORTS NEWS HEVC 4K",
+          "channel_group": "UK| SPORT ʰᵉᵛᶜ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44948,
+          "name": "UK: SKY SPORTS NEWS HEVC HD",
+          "channel_group": "UK| SPORT ʰᵉᵛᶜ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44882,
+          "name": "UK: SKY SPORTS NEWS ᴴᴰ ◉",
+          "channel_group": "UK| SPORT ᴴᴰ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44839,
+          "name": "VIP: SKY SPORTS NEWS ᴴᴰ ʰᵉᵛᶜ",
+          "channel_group": "UK| SPORT ᴴᴰ ⱽᴵᴾ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44792,
+          "name": "VIP: SKY SPORTS NEWS ᴴᴰ",
+          "channel_group": "UK| SPORT ᴴᴰ ⱽᴵᴾ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        }
+      ]
+    },
+    {
+      "id": 19255041,
+      "title": "Premier League fixture 3",
+      "sub_title": null,
+      "description": "Example programme.",
+      "start_time": "2026-11-21T10:00:00Z",
+      "end_time": "2026-11-21T11:30:00Z",
+      "tvg_id": "SkySportsNews.uk",
+      "custom_properties": null,
+      "epg_source": "IPTV",
+      "epg_name": "VIP: SKY SPORTS NEWS ᴴᴰ",
+      "epg_icon_url": null,
+      "channels": [
+        {
+          "id": 7612,
+          "name": "Sky Sports News HD",
+          "channel_number": 409,
+          "channel_group": "Sky: Sports",
+          "tvg_id": null
+        }
+      ],
+      "streams": [
+        {
+          "id": 44992,
+          "name": "UK: SKY SPORTS NEWS HEVC 4K",
+          "channel_group": "UK| SPORT ʰᵉᵛᶜ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44948,
+          "name": "UK: SKY SPORTS NEWS HEVC HD",
+          "channel_group": "UK| SPORT ʰᵉᵛᶜ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44882,
+          "name": "UK: SKY SPORTS NEWS ᴴᴰ ◉",
+          "channel_group": "UK| SPORT ᴴᴰ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44839,
+          "name": "VIP: SKY SPORTS NEWS ᴴᴰ ʰᵉᵛᶜ",
+          "channel_group": "UK| SPORT ᴴᴰ ⱽᴵᴾ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        },
+        {
+          "id": 44792,
+          "name": "VIP: SKY SPORTS NEWS ᴴᴰ",
+          "channel_group": "UK| SPORT ᴴᴰ ⱽᴵᴾ",
+          "tvg_id": "SkySportsNews.uk",
+          "m3u_account": "IPTV"
+        }
+      ]
+    },
+    {
+      "id": 19256460,
+      "title": "Premier League fixture 2",
+      "sub_title": null,
+      "description": "Example programme.",
+      "start_time": "2026-11-21T12:00:00Z",
+      "end_time": "2026-11-21T12:30:00Z",
+      "tvg_id": "USANetwork.us",
+      "custom_properties": null,
+      "epg_source": "IPTV",
+      "epg_name": "US: USA NETWORK 4K",
+      "epg_icon_url": null,
+      "channels": [
+        {
+          "id": 8042,
+          "name": "USA",
+          "channel_number": 1262,
+          "channel_group": "US: Entertainment",
+          "tvg_id": null
+        }
+      ],
+      "streams": []
+    },
+    {
+      "id": 19256461,
+      "title": "Premier League fixture 5",
+      "sub_title": null,
+      "description": "Example programme.",
+      "start_time": "2026-11-21T12:30:00Z",
+      "end_time": "2026-11-21T14:30:00Z",
+      "tvg_id": "USANetwork.us",
+      "custom_properties": null,
+      "epg_source": "IPTV",
+      "epg_name": "US: USA NETWORK 4K",
+      "epg_icon_url": null,
+      "channels": [
+        {
+          "id": 8042,
+          "name": "USA",
+          "channel_number": 1262,
+          "channel_group": "US: Entertainment",
+          "tvg_id": null
+        }
+      ],
+      "streams": []
+    }
+  ]
+}

@@ -20,6 +20,8 @@ export type Config = {
   radarr?: { url: string; apiKey: string };
   /** Jellyseerr's base URL and API key. Both set, they turn on the Jellyseerr Source. */
   jellyseerr?: { url: string; apiKey: string };
+  /** Dispatcharr's base URL and API key. Both set, they turn on the Dispatcharr Source. */
+  dispatcharr?: { url: string; apiKey: string };
   /** The Report file and how old it may be before it's a Stale report. Set, it turns on the Report Source. */
   report?: { path: string; maxAgeHours: number };
   /** Set, the server runs in admin mode: it offers the Allowlist instead of the read Tools. */
@@ -148,6 +150,14 @@ const schema = z
       .transform((url) => url.replace(/\/+$/, ""))
       .optional(),
     JELLYSEERR_API_KEY: z.string().optional(),
+    DISPATCHARR_URL: z
+      .url({
+        protocol: /^https?$/,
+        error: "DISPATCHARR_URL must be an http:// or https:// address",
+      })
+      .transform((url) => url.replace(/\/+$/, ""))
+      .optional(),
+    DISPATCHARR_API_KEY: z.string().optional(),
     REPORT_PATH: z
       .string()
       .refine((path) => path.startsWith("/"), { error: "REPORT_PATH must be an absolute path" })
@@ -254,6 +264,12 @@ const schema = z
   .refine((env) => (env.JELLYSEERR_URL === undefined) === (env.JELLYSEERR_API_KEY === undefined), {
     error: "JELLYSEERR_URL and JELLYSEERR_API_KEY must be set together, or neither",
   })
+  .refine(
+    (env) => (env.DISPATCHARR_URL === undefined) === (env.DISPATCHARR_API_KEY === undefined),
+    {
+      error: "DISPATCHARR_URL and DISPATCHARR_API_KEY must be set together, or neither",
+    },
+  )
   // A half-set pair stops the server, as a max age with nothing to apply it to would otherwise be ignored.
   .refine((env) => env.REPORT_MAX_AGE_HOURS === undefined || env.REPORT_PATH !== undefined, {
     error: "REPORT_MAX_AGE_HOURS only applies with REPORT_PATH set",
@@ -331,6 +347,9 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     ...(parsed.JELLYSEERR_URL && parsed.JELLYSEERR_API_KEY
       ? { jellyseerr: { url: parsed.JELLYSEERR_URL, apiKey: parsed.JELLYSEERR_API_KEY } }
       : {}),
+    ...(parsed.DISPATCHARR_URL && parsed.DISPATCHARR_API_KEY
+      ? { dispatcharr: { url: parsed.DISPATCHARR_URL, apiKey: parsed.DISPATCHARR_API_KEY } }
+      : {}),
     ...(parsed.REPORT_PATH
       ? {
           report: {
@@ -382,6 +401,7 @@ export function sourcesOn(config: Config): string {
     ...(config.sonarr ? ["Sonarr"] : []),
     ...(config.radarr ? ["Radarr"] : []),
     ...(config.jellyseerr ? ["Jellyseerr"] : []),
+    ...(config.dispatcharr ? ["Dispatcharr"] : []),
     ...(config.report ? ["Report"] : []),
   ].join(", ");
 }
