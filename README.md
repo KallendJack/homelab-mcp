@@ -88,7 +88,7 @@ A Token is any random string of at least 32 characters, such as the output of `o
 ```yaml
 services:
   homelab-mcp:
-    image: ghcr.io/kallendjack/homelab-mcp:0.2.1
+    image: ghcr.io/kallendjack/homelab-mcp:0.3.0
     environment:
       MCP_TOKEN: ${MCP_TOKEN:?}
       DOCKER_URL: http://socket-proxy:2375
@@ -131,7 +131,7 @@ one only to a Client that asks before each Action.
 ```yaml
 services:
   homelab-mcp-admin:
-    image: ghcr.io/kallendjack/homelab-mcp:0.2.1
+    image: ghcr.io/kallendjack/homelab-mcp:0.3.0
     environment:
       MCP_TOKEN: ${MCP_TOKEN:?}
       ADMIN_TOKEN: ${ADMIN_TOKEN:?}
