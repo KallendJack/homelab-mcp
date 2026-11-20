@@ -64,6 +64,7 @@ jobs:
           docker logs admin
           test "$status" = healthy
           docker logs admin | grep -q "Allowlist: pull_config, preview_service, recreate_service, start_container."
+          docker logs admin | grep -q "Media Sources: none\."
           test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8766/mcp)" = 401
           # Compose, as the unprivileged user, through the real socket.
           docker exec admin docker compose -f "$RUNNER_TEMP/stacks/ops/compose.yaml" config --hash homelab-mcp-admin
