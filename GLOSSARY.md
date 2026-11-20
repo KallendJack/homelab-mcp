@@ -80,6 +80,15 @@ _Avoid_: link, URL, source (that's a system the server reads)
 The TV listings (EPG) a Channel is linked to, from Dispatcharr's EPG sources or built by Teamarr for games.
 _Avoid_: EPG data, schedule, listings
 
+**M3U account**:
+A live TV provider's account in Dispatcharr, the Streams it imports, how many it allows at once, and when it
+expires.
+_Avoid_: provider, playlist, subscription
+
+**Channel profile**:
+A named set of Channels in Dispatcharr, published as its own playlist and Guide, such as the one TiviMate shows.
+_Avoid_: lineup (that's the Channels Jack wants, not Dispatcharr's setting), group
+
 ### Safety
 
 **Secret**:

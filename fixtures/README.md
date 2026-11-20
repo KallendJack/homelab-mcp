@@ -51,3 +51,16 @@ Jellyseerr 2.7.3's answers. No real Request was sent, so `request-created.json` 
 - `tv-new.json`, `tv-partly-available.json`: a series not in Jellyseerr, and one with seasons 1-2 available, 3
   requested, 4 not, plus specials.
 - `request-created.json`, `request-duplicate.json`: a created Request, and the answer to a duplicate.
+
+## Dispatcharr
+
+Dispatcharr 0.34.0's answers, recorded 2026-11-20 at 14:11 UTC with GET requests only. Each Stream's address and
+hash, the M3U account's login, server and welcome message, and every logo address were replaced.
+
+- `channels-tnt-sports-recorded.json`: the first 10 of 13 Channels named like "tnt sports", by channel number. Some
+  have no Stream and some no Guide link, and the rest share one Guide entry.
+- `channel-streams-tnt-sports-recorded.json`: each of those Channels' Streams, keyed by Channel id.
+- `epgdata-tnt-sports-recorded.json`, `groups-tnt-sports-recorded.json`: the Guide entry and group they share, keyed by id.
+- `profiles-recorded.json`: the channel profiles, each keeping only the Channels above.
+- `m3u-accounts-recorded.json`: the provider's account, and Dispatcharr's own locked one for hand-made Streams.
+- `programs-premier-league-recorded.json`: programmes matching "premier league" from then to 24 hours later.

@@ -2,8 +2,8 @@
 
 An MCP server that lets an AI assistant, such as Claude Code, see how a self-hosted Docker homelab is doing:
 containers, logs and disk, plus Gatus health checks, Jellyfin's new media, the Sonarr and Radarr download queues,
-Jellyseerr search and a daily Report when those are set up. It only reads, through a Docker socket proxy, so nothing
-it does can change a container.
+Jellyseerr search, Dispatcharr's live TV Channels and Guide, and a daily Report when those are set up. It only
+reads, through a Docker socket proxy, so nothing it does can change a container.
 
 An optional second container runs the same image in [admin mode](#4-admin-mode-optional), for changes the person
 approves one by one: deploys from the config repo, starting a stopped container, reloading the reverse proxy, and
@@ -14,30 +14,33 @@ and the decisions in [`docs/adr/`](docs/adr/).
 
 ## Tools
 
-| Tool                 | What the Client gets                                                                | Needs                                     |
-| -------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------- |
-| `list_containers`    | Every container's state, status and image, the ones needing attention first         | Always on                                 |
-| `container_logs`     | A container's latest log lines (up to 500), after Redaction                         | Always on                                 |
-| `disk_usage`         | Percent used, and space used, free and total, for each configured path              | Always on                                 |
-| `list_health_checks` | Each Gatus check, failing first, with its latest response time                      | `GATUS_URL`                               |
-| `recent_media`       | Films and episodes added to Jellyfin in the last 1 to 30 days                       | `JELLYFIN_URL` and `JELLYFIN_API_KEY`     |
-| `download_queue`     | Sonarr and Radarr downloads, problems first, with each app's own message            | `SONARR_*` or `RADARR_*` pair             |
-| `import_candidates`  | What a manual import would do with one download: each file's match and quality      | `SONARR_*` or `RADARR_*` pair             |
-| `search_media`       | Up to 10 Jellyseerr matches for a name, with whether each is available or requested | `JELLYSEERR_URL` and `JELLYSEERR_API_KEY` |
-| `read_report`        | Your scheduled status file as written, with a warning if it's out of date           | `REPORT_PATH`                             |
+| Tool                 | What the Client gets                                                                 | Needs                                       |
+| -------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------- |
+| `list_containers`    | Every container's state, status and image, the ones needing attention first          | Always on                                   |
+| `container_logs`     | A container's latest log lines (up to 500), after Redaction                          | Always on                                   |
+| `disk_usage`         | Percent used, and space used, free and total, for each configured path               | Always on                                   |
+| `list_health_checks` | Each Gatus check, failing first, with its latest response time                       | `GATUS_URL`                                 |
+| `recent_media`       | Films and episodes added to Jellyfin in the last 1 to 30 days                        | `JELLYFIN_URL` and `JELLYFIN_API_KEY`       |
+| `download_queue`     | Sonarr and Radarr downloads, problems first, with each app's own message             | `SONARR_*` or `RADARR_*` pair               |
+| `import_candidates`  | What a manual import would do with one download: each file's match and quality       | `SONARR_*` or `RADARR_*` pair               |
+| `search_media`       | Up to 10 Jellyseerr matches for a name, with whether each is available or requested  | `JELLYSEERR_URL` and `JELLYSEERR_API_KEY`   |
+| `find_channel`       | Up to 10 live TV Channels for a name: Guide link, Streams in order, channel profiles | `DISPATCHARR_URL` and `DISPATCHARR_API_KEY` |
+| `search_guide`       | Programmes on now or coming up whose title matches, with the Channels showing them   | `DISPATCHARR_URL` and `DISPATCHARR_API_KEY` |
+| `m3u_accounts`       | Each live TV provider account: status, connections and expiry, naming any due soon   | `DISPATCHARR_URL` and `DISPATCHARR_API_KEY` |
+| `read_report`        | Your scheduled status file as written, with a warning if it's out of date            | `REPORT_PATH`                               |
 
 Admin mode's Actions:
 
-| Action             | What it does                                                                     | Needs                                                 |
-| ------------------ | -------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| `pull_config`      | Fast-forwards the config repo and says which Services' files changed             | Admin mode                                            |
-| `preview_service`  | A dry run of recreating one Service                                              | Admin mode                                            |
-| `recreate_service` | Pulls one Service's image and recreates only that Service                        | Admin mode                                            |
-| `start_container`  | Starts a stopped Container                                                       | Admin mode                                            |
-| `reload_proxy`     | Runs the reverse proxy's reload command                                          | `ADMIN_PROXY_CONTAINER`, `ADMIN_PROXY_RELOAD_COMMAND` |
-| `retry_download`   | Blocklists a stuck or failed download and has Sonarr or Radarr search again      | `SONARR_*` or `RADARR_*` pair                         |
-| `manual_import`    | Imports a download's matched files and lists the skipped ones                    | `SONARR_*` or `RADARR_*` pair                         |
-| `request_media`    | Requests a film, or a series' seasons, in Jellyseerr                             | `JELLYSEERR_URL` and `JELLYSEERR_API_KEY`             |
+| Action             | What it does                                                                | Needs                                                 |
+| ------------------ | --------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `pull_config`      | Fast-forwards the config repo and says which Services' files changed        | Admin mode                                            |
+| `preview_service`  | A dry run of recreating one Service                                         | Admin mode                                            |
+| `recreate_service` | Pulls one Service's image and recreates only that Service                   | Admin mode                                            |
+| `start_container`  | Starts a stopped Container                                                  | Admin mode                                            |
+| `reload_proxy`     | Runs the reverse proxy's reload command                                     | `ADMIN_PROXY_CONTAINER`, `ADMIN_PROXY_RELOAD_COMMAND` |
+| `retry_download`   | Blocklists a stuck or failed download and has Sonarr or Radarr search again | `SONARR_*` or `RADARR_*` pair                         |
+| `manual_import`    | Imports a download's matched files and lists the skipped ones               | `SONARR_*` or `RADARR_*` pair                         |
+| `request_media`    | Requests a film, or a series' seasons, in Jellyseerr                        | `JELLYSEERR_URL` and `JELLYSEERR_API_KEY`             |
 
 What each Tool and Action does, and refuses, is in [the architecture](docs/architecture.md#read-tools).
 
@@ -202,6 +205,7 @@ the variable but never its value. An empty value counts as unset, so `NAME: ${NA
 | `SONARR_URL`, `SONARR_API_KEY`                        | No, both or neither                                      | Turn on Sonarr. The key is only ever sent in a header                                                                                                           |
 | `RADARR_URL`, `RADARR_API_KEY`                        | No, both or neither                                      | Turn on Radarr. The key is only ever sent in a header                                                                                                           |
 | `JELLYSEERR_URL`, `JELLYSEERR_API_KEY`                | No, both or neither                                      | Turn on Jellyseerr: `search_media`, and `request_media` in admin mode. The key is only ever sent in a header                                                    |
+| `DISPATCHARR_URL`, `DISPATCHARR_API_KEY`              | No, both or neither                                      | Turn on Dispatcharr: `find_channel`, `search_guide` and `m3u_accounts`. The key is only ever sent in a header, and these Tools only read                        |
 | `REPORT_PATH`                                         | No, turns on the Report                                  | The Report file's absolute path, mounted read-only                                                                                                              |
 | `REPORT_MAX_AGE_HOURS`                                | No, default `26`; only with `REPORT_PATH`                | Whole hours; an older Report gets a warning                                                                                                                     |
 | `ADMIN_TOKEN`                                         | No, turns on admin mode; 32+ characters, not `MCP_TOKEN` | The Token for admin mode. The server then offers only the Allowlist, and no read Tool                                                                           |
@@ -234,6 +238,7 @@ CI smoke-tests the image and publishes it to `ghcr.io/kallendjack/homelab-mcp:<v
 | [`src/`](src/)                          | The server. Its top level ties the folders below together.                      |
 | [`src/admin/`](src/admin/README.md)     | The Actions that change the Host's Services and Config repo, and the Allowlist. |
 | [`src/media/`](src/media/README.md)     | The Tools and Actions about films, series and downloads.                        |
+| [`src/live-tv/`](src/live-tv/README.md) | The Tools about live TV Channels, the Guide and provider accounts.              |
 | [`src/sources/`](src/sources/README.md) | One module per system the server talks to.                                      |
 | [`src/testing/`](src/testing/README.md) | Fakes shared by the offline tests.                                              |
 | [`fixtures/`](fixtures/README.md)       | The recorded and hand-written answers the tests' fake `fetch` gives.            |

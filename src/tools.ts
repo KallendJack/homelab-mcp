@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { humanBytes } from "./bytes.ts";
 import { closestNames } from "./closest-names.ts";
+import { findChannel } from "./live-tv/find-channel.ts";
+import { m3uAccounts } from "./live-tv/m3u-accounts.ts";
+import { searchGuide } from "./live-tv/search-guide.ts";
 import { downloadQueue } from "./media/download-queue.ts";
 import { importCandidates } from "./media/manual-import.ts";
 import { formatRecentMedia, recentMediaInput } from "./media/recent-media.ts";
@@ -9,6 +12,7 @@ import { formatReport } from "./read-report.ts";
 import { Refusal } from "./refusal.ts";
 import type { Arr } from "./sources/arr.ts";
 import type { Disk, DiskFailure, DiskUsage } from "./sources/disk.ts";
+import type { Dispatcharr } from "./sources/dispatcharr.ts";
 import { CONTAINER_NAME, type Container, type Docker } from "./sources/docker.ts";
 import type { Gatus, HealthCheck, HealthCheckResult } from "./sources/gatus.ts";
 import type { Jellyfin } from "./sources/jellyfin.ts";
@@ -37,12 +41,15 @@ export type Sources = {
   sonarr?: Arr;
   radarr?: Arr;
   jellyseerr?: Jellyseerr;
+  dispatcharr?: Dispatcharr;
   report?: ReportSource;
 };
 
 export type ToolOptions = {
   /** Container names whose logs are never returned (from config). */
   privateContainers: string[];
+  /** The clock the live TV Tools count from. Left out, the real one. */
+  now?: () => Date;
 };
 
 const DEFAULT_LOG_LINES = 100;
@@ -104,12 +111,15 @@ export function buildTools(sources: Sources, options: ToolOptions): Tool[] {
       inputSchema: {},
       handler: async () => formatDiskUsage(await sources.disk.usage()),
     },
-    ...optionalTools(sources),
+    ...optionalTools(sources, options.now ?? (() => new Date())),
   ];
 }
 
 /** The Tools of optional Sources, each only when its Source is on. */
-function optionalTools({ gatus, jellyfin, sonarr, radarr, jellyseerr, report }: Sources): Tool[] {
+function optionalTools(
+  { gatus, jellyfin, sonarr, radarr, jellyseerr, dispatcharr, report }: Sources,
+  now: () => Date,
+): Tool[] {
   const tools: Tool[] = [];
   const arrs = [sonarr, radarr].filter((a): a is Arr => a !== undefined);
   if (gatus) {
@@ -151,6 +161,13 @@ function optionalTools({ gatus, jellyfin, sonarr, radarr, jellyseerr, report }: 
     });
   }
   if (jellyseerr) tools.push(searchMedia(jellyseerr));
+  if (dispatcharr) {
+    tools.push(
+      findChannel(dispatcharr),
+      searchGuide(dispatcharr, now),
+      m3uAccounts(dispatcharr, now),
+    );
+  }
   if (report) {
     tools.push({
       name: "read_report",

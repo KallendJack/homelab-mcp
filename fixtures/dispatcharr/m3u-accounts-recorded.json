@@ -1,0 +1,146 @@
+[
+  {
+    "id": 7,
+    "name": "IPTV",
+    "server_url": "http://provider.example",
+    "file_path": null,
+    "server_group": null,
+    "max_streams": 1,
+    "is_active": true,
+    "created_at": "2026-08-23T17:28:58.565126Z",
+    "updated_at": "2026-11-20T14:00:23.185287Z",
+    "filters": [],
+    "user_agent": null,
+    "profiles": [
+      {
+        "id": 7,
+        "name": "IPTV Default",
+        "max_streams": 1,
+        "is_active": true,
+        "is_default": true,
+        "current_viewers": 0,
+        "search_pattern": "^(.*)$",
+        "replace_pattern": "$1",
+        "custom_properties": {
+          "user_info": {
+            "auth": 1,
+            "status": "Active",
+            "message": "Welcome",
+            "exp_date": "1795412210",
+            "is_trial": "0",
+            "password": "example-password",
+            "username": "example-user",
+            "created_at": "1789768800",
+            "active_cons": "0",
+            "max_connections": "1",
+            "allowed_output_formats": ["m3u8", "ts", "rtmp"]
+          },
+          "server_info": {
+            "url": "provider.example",
+            "port": "80",
+            "time_now": "2026-11-20 15:00:09",
+            "timezone": "Europe/Amsterdam",
+            "rtmp_port": "25462",
+            "https_port": "443",
+            "timestamp_now": 1795183209,
+            "server_protocol": "http"
+          },
+          "last_refresh": "2026-11-20T14:00:09.738245Z",
+          "auth_timestamp": 1795183209.738277
+        },
+        "exp_date": "2026-11-23T05:36:50Z",
+        "account": {
+          "id": 7,
+          "name": "IPTV",
+          "account_type": "XC",
+          "is_xtream_codes": true
+        }
+      }
+    ],
+    "locked": false,
+    "channel_groups": [],
+    "refresh_interval": 6,
+    "cron_expression": "",
+    "custom_properties": {
+      "enable_vod": false,
+      "auto_enable_new_groups_vod": false,
+      "auto_enable_new_groups_live": false,
+      "auto_enable_new_groups_series": false
+    },
+    "account_type": "XC",
+    "username": "example-user",
+    "stale_stream_days": 7,
+    "priority": 0,
+    "status": "success",
+    "last_message": "Processing completed in 13.8 seconds. Streams: 0 created, 290 updated, 0 marked stale, 0 removed. Total processed: 7270.",
+    "earliest_expiration": "2026-11-23T05:36:50Z",
+    "all_expirations": [
+      {
+        "profile_id": 7,
+        "profile_name": "IPTV Default",
+        "exp_date": "2026-11-23T05:36:50Z",
+        "is_active": true
+      }
+    ],
+    "password": "example-password",
+    "enable_vod": false,
+    "auto_enable_new_groups_live": false,
+    "auto_enable_new_groups_vod": false,
+    "auto_enable_new_groups_series": false,
+    "hash_key": null,
+    "exp_date": "2026-11-23T05:36:50Z"
+  },
+  {
+    "id": 1,
+    "name": "custom",
+    "server_url": null,
+    "file_path": null,
+    "server_group": null,
+    "max_streams": 0,
+    "is_active": true,
+    "created_at": "2026-08-22T21:27:27.475581Z",
+    "updated_at": "2026-08-22T21:27:27.475617Z",
+    "filters": [],
+    "user_agent": null,
+    "profiles": [
+      {
+        "id": 1,
+        "name": "custom Default",
+        "max_streams": 0,
+        "is_active": true,
+        "is_default": true,
+        "current_viewers": 0,
+        "search_pattern": "^(.*)$",
+        "replace_pattern": "$1",
+        "custom_properties": {},
+        "exp_date": null,
+        "account": {
+          "id": 1,
+          "name": "custom",
+          "account_type": "STD",
+          "is_xtream_codes": false
+        }
+      }
+    ],
+    "locked": true,
+    "channel_groups": [],
+    "refresh_interval": 24,
+    "cron_expression": "",
+    "custom_properties": null,
+    "account_type": "STD",
+    "username": null,
+    "stale_stream_days": 7,
+    "priority": 0,
+    "status": "error",
+    "last_message": "No M3U source available (missing URL and file)",
+    "earliest_expiration": null,
+    "all_expirations": [],
+    "password": "",
+    "enable_vod": false,
+    "auto_enable_new_groups_live": true,
+    "auto_enable_new_groups_vod": true,
+    "auto_enable_new_groups_series": true,
+    "hash_key": null,
+    "exp_date": null
+  }
+]
